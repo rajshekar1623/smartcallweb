@@ -82,7 +82,13 @@ public class TransactionMainLayout extends AppLayout {
         
         RouterLink transactionDataUpload = new RouterLink("File Upload", TransactionDataUpload.class);
         
-        VerticalLayout drawer = new VerticalLayout(listLink,transactionDataUpload);
+        RouterLink activityStatus = new RouterLink("Activity Status",ActivityStatusView.class);
+        
+        RouterLink sendSms = new RouterLink("Send SMS",SendSmsView.class);
+        
+        RouterLink sendWhatsapp = new RouterLink("Send Whatsapp",SendWhatsappView.class);
+        RouterLink report = new RouterLink("Report",TransactionReport.class);
+        VerticalLayout drawer = new VerticalLayout(listLink,transactionDataUpload,activityStatus,sendSms,sendWhatsapp,report);
         drawer.setSizeFull();
         drawer.getStyle().set( "border" , "2px solid Grey" ) ; 
         drawer.getStyle().set("border-radius", "10px");

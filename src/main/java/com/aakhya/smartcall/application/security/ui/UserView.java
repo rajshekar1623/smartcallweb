@@ -1,5 +1,7 @@
 package com.aakhya.smartcall.application.security.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.security.PermitAll;
@@ -11,13 +13,14 @@ import com.aakhya.smartcall.application.admin.service.BranchService;
 import com.aakhya.smartcall.application.security.entity.User;
 import com.aakhya.smartcall.application.security.service.RoleService;
 import com.aakhya.smartcall.application.security.service.UserService;
+import com.aakhyatech.smartcall.application.utils.MessageUtils;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
@@ -34,8 +37,9 @@ public class UserView extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = -2474642139276717277L;
 	PaginatedGrid<User,?> grid = new PaginatedGrid<>(User.class);
-	TextField filterText = new TextField("Member Name");
+	TextField filterText = new TextField();
 	ComboBox<Branch> branchCB;
+	Label searchCount = new Label();
 	UserForm form;
 	UserService service;
 	RoleService roleService;
@@ -72,7 +76,7 @@ public class UserView extends VerticalLayout {
 	}
 
 	private void configureForm(RoleService roleService, BranchService branchService) {
-		form = new UserForm(roleService.findAll(null), branchService.findAllBranches(null));
+		form = new UserForm(roleService.findAll(null), branchService.findAllBranches(null,null));
 //        form.setWidth("25em");
 		form.addListener(UserForm.SaveEvent.class, this::saveUser);
 		form.addListener(UserForm.DeleteEvent.class, this::deleteContact);
@@ -105,36 +109,54 @@ public class UserView extends VerticalLayout {
 //		grid.asSingleSelect().addValueChangeListener(event -> editUser(event.getValue()));
 	}
 
-	private VerticalLayout getToolbar() {
-		filterText.setPlaceholder("Filter by name...");
+	private HorizontalLayout getToolbar() {
+		filterText.setPlaceholder("Filter by User Id...");
 		filterText.setClearButtonVisible(true);
 		filterText.setValueChangeMode(ValueChangeMode.LAZY);
 //		filterText.addValueChangeListener(e -> updateList());
-		branchCB = new ComboBox<Branch>("Branch");
-		branchCB.setWidth(100, Unit.PERCENTAGE);
-		branchCB.setItems(branchService.findAllBranches(null));
+		branchCB = new ComboBox<Branch>();
+		branchCB.setPlaceholder("Filter by Branch...");
+//		branchCB.setWidth(100, Unit.PERCENTAGE);
+		branchCB.setItems(branchService.findAllBranches(null,null));
 		branchCB.setItemLabelGenerator(Branch::getBranchName);
+		searchCount.setWidth(100, Unit.PERCENTAGE);
 		Button addContactButton = new Button("Add User");
+		addContactButton.setWidth(100, Unit.PERCENTAGE);
 		addContactButton.addClickListener(click -> addContact());
 		
 		Button searchUsers = new Button("Search");
+		searchUsers.setWidth(100, Unit.PERCENTAGE);
 		searchUsers.addClickListener(click -> updateList());
+		Button resetUsers = new Button("Reset");
+		resetUsers.setWidth(100, Unit.PERCENTAGE);
+		resetUsers.addClickListener(click -> reset());
 		Button deleteUsers = new Button("Delete User");
+		deleteUsers.setWidth(100, Unit.PERCENTAGE);
 		deleteUsers.addClickListener(click -> deleteUsers());
-		VerticalLayout toolbar = new VerticalLayout();
-		HorizontalLayout row1 = new HorizontalLayout(filterText,branchCB);
+		HorizontalLayout toolbar = new HorizontalLayout();
+		toolbar.setWidth(100, Unit.PERCENTAGE);
+		toolbar.add(filterText,branchCB,searchUsers,addContactButton,resetUsers,deleteUsers,searchCount);
+//		row1.setWidth(100, Unit.PERCENTAGE);
+		toolbar.setVerticalComponentAlignment(Alignment.CENTER, searchCount);
+//		HorizontalLayout row2 = new HorizontalLayout(addContactButton,searchUsers,resetUsers,deleteUsers);
 //		toolbar.setWidth(100, Unit.PERCENTAGE);
-		HorizontalLayout row2 = new HorizontalLayout(addContactButton,searchUsers,deleteUsers);
-//		toolbar.setWidth(100, Unit.PERCENTAGE);
-		toolbar.add(row1,row2);
+//		toolbar.add(row1,row2);
 		toolbar.addClassName("toolbar");
 		return toolbar;
+	}
+
+	private void reset() {
+		filterText.setValue("");
+		branchCB.setValue(null);
+		grid.setItems(new ArrayList<User>());
 	}
 
 	public void editUser(User user) {
 		if (user == null) {
 			closeEditor();
 		} else {
+			grid.asMultiSelect().deselect(grid.getSelectedItems());
+			grid.select(user);
 			user.setPassword(null);
 			form.setUser(user);
 			form.setVisible(true);
@@ -156,15 +178,24 @@ public class UserView extends VerticalLayout {
 
 	private void updateList() {
 		Branch branch = branchCB.getValue();
-		if(null != filterText.getValue() && null != branch)
-			grid.setItems(service.findAllUsers(filterText.getValue(),branch.getBranchCode()));
-		else if(null != filterText.getValue())
-			grid.setItems(service.findAllUsers(filterText.getValue(),null));
-		else if(null != branch) {
+		if(null != filterText.getValue() && null != branch) {
+			List<User> users = service.findAllUsers(filterText.getValue(),branch.getBranchCode());
+			searchCount.setText("No of records fetched is "+users.size());
+			grid.setItems(users);
+		}else if(null != filterText.getValue()) {
+			List<User> users = service.findAllUsers(filterText.getValue(),null);
+			searchCount.setText("No of records fetched is "+users.size());
+			grid.setItems(users);
+		}else if(null != branch) {
+			List<User> users = service.findAllUsers(null,branch.getBranchCode());
+			searchCount.setText("No of records fetched is "+users.size());
 			System.out.println("Executing branch filter in UI ");
-			grid.setItems(service.findAllUsers(null,branch.getBranchCode()));
-		}else
-			grid.setItems(service.findAllUsers(null,null));
+			grid.setItems(users);
+		}else {
+			List<User> users = service.findAllUsers(null,null);
+			searchCount.setText("No of records fetched is "+users.size());
+			grid.setItems(users);
+		}
 		closeEditor();
 		content.setSplitterPosition(100);
 	}
@@ -174,7 +205,7 @@ public class UserView extends VerticalLayout {
 		if(null != selectedUsers && !selectedUsers.isEmpty()) {
 			ConfirmDialog dialog = new ConfirmDialog();
 			dialog.setHeader("Delete Users");
-			dialog.setText("Are you sure you want to delete User's ?");
+			dialog.setText("Are you sure you want to delete User ?");
 
 			dialog.setCancelable(true);
 
@@ -182,10 +213,12 @@ public class UserView extends VerticalLayout {
 			dialog.addConfirmListener(event -> finalDelete(selectedUsers));
 			dialog.open();
 		}else
-			Notification.show("No records selected for delete", 5000, Notification.Position.MIDDLE);
+			MessageUtils.validationMessage("No records selected for delete");
 	}
 	
 	private void finalDelete(Set<User> selectedUsers) {
-//		service.
+		service.deleteUsers(selectedUsers);
+		MessageUtils.successMessage("User deleted sucessfully");
+		updateList();
 	}
 }

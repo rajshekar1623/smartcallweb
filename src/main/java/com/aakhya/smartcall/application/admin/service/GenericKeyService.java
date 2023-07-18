@@ -1,6 +1,7 @@
 package com.aakhya.smartcall.application.admin.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,12 +16,17 @@ public class GenericKeyService {
 	@Autowired
 	private GenericKeyRepository genericKeyRepository;
 
-	public List<GenericKey> findAllGenericKeys(String filterDescrption) {
-		if (null == filterDescrption || filterDescrption.isEmpty()) {
+	public List<GenericKey> findAllGenericKeys(String description,String genericKey) {
+		if(null != description && !description.isEmpty()
+				&& null != genericKey && !genericKey.isEmpty()) {
+			return genericKeyRepository.findByDescriptionAndKey(description, genericKey);
+		}else if(null != description && !description.isEmpty()) {
+			return genericKeyRepository.findByDescription(description);
+		}else if(null != genericKey && !genericKey.isEmpty()) {
+			return genericKeyRepository.findByKey(genericKey);
+		}else {
 			return genericKeyRepository.findAll();
-		} else {
-			return genericKeyRepository.search(filterDescrption);
-		}
+		} 
 	}
 
 	public void saveGenericKey(GenericKey genericKey) {
@@ -37,6 +43,15 @@ public class GenericKeyService {
 				&& !genericKey.getGenericKey().isEmpty()) {
 			genericKey.setStatus(RecordStatusType.DELETED.getValue());
 			genericKeyRepository.save(genericKey);
+		}
+	}
+	
+	public void deleteGenericKeys(Set<GenericKey> genericKeys) {
+		if(null != genericKeys && !genericKeys.isEmpty()) {
+			for(GenericKey genericKey:genericKeys) {
+				genericKey.setStatus(RecordStatusType.DELETED.getValue());
+				genericKeyRepository.save(genericKey);
+			}
 		}
 	}
 }

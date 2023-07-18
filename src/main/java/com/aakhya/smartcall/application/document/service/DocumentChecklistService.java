@@ -10,51 +10,41 @@ import com.aakhya.smartcall.application.document.entity.DocumentChecklist;
 import com.aakhya.smartcall.application.document.entity.DocumentChecklistPK;
 import com.aakhya.smartcall.application.document.repository.DocumentChecklistRepository;
 
-
 @Service
 public class DocumentChecklistService {
 
-	
-	
 	@Autowired
 	private DocumentChecklistRepository documentChecklistRepository;
-	
-	
-public List<DocumentChecklist> findAllDocumentChecklists(){
-		
+
+	public List<DocumentChecklist> findAllDocumentChecklists() {
+
 		List<DocumentChecklist> documentChecklists = documentChecklistRepository.findAll();
-		
+
 		return documentChecklists;
-		
+
 	}
 
+	public DocumentChecklist findByPrimaryKey(DocumentChecklistPK documentChecklistPK) {
 
-public DocumentChecklist findByPrimaryKey(DocumentChecklistPK documentChecklistPK) {
-	
-	Optional<DocumentChecklist> op = documentChecklistRepository.findById(documentChecklistPK);
-	
-	if(op.isPresent()) {
-		
-		DocumentChecklist dcl = op.get();
-		
-		return dcl;
+		Optional<DocumentChecklist> op = documentChecklistRepository.findById(documentChecklistPK);
+
+		if (op.isPresent()) {
+
+			DocumentChecklist dcl = op.get();
+
+			return dcl;
+		} else {
+			return null;
+		}
 	}
-	else {
-		return null;
+
+	public void saveDocumentChecklist(DocumentChecklist documentChecklist) {
+
+		if (null != documentChecklist) {
+			documentChecklistRepository.save(documentChecklist);
+
+		}
+
 	}
-}
 
-
-public void saveDocumentChecklist(DocumentChecklist documentChecklist) {
-	
-	if(null!= documentChecklist) {
-		documentChecklistRepository.save(documentChecklist);
-		
-	}
-	
-}
-
-
-	
-	
 }

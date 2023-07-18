@@ -13,25 +13,36 @@ import com.aakhya.smartcall.application.admin.entity.BranchPk;
 @Repository
 public interface BranchRepository extends JpaRepository<Branch, BranchPk> {
 
-	@Query("select c from Branch c " +
-		      "where status <> 'X'") 
+	@Query("select c from Branch c " + "where status <> 'X'")
 	List<Branch> findAll();
-	@Query("select c from Branch c " +
-      "where lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'") 
-    List<Branch> search(@Param("searchTerm") String searchTerm);
-	@Query("select c from Branch c " +
-		      "where parentBranch is null and status <> 'X' ") 
+
+	@Query("select c from Branch c "
+			+ "where lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and c.branchCode = :branchCode and status <> 'X'")
+	List<Branch> findByNameAndCode(@Param("searchTerm") String searchTerm, @Param("branchCode") String branchCode);
+
+	@Query("select c from Branch c "
+			+ "where c.branchCode = :branchCode and status <> 'X'")
+	List<Branch> findByCode(@Param("branchCode") String branchCode);
+
+	@Query("select c from Branch c "
+			+ "where lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'")
+	List<Branch> search(@Param("searchTerm") String searchTerm);
+
+	@Query("select c from Branch c " + "where parentBranch is null and status <> 'X' ")
 	List<Branch> findTopLevelBranches();
-	@Query("select c from Branch c " +
-		      "where parentBranch is null and lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'") 
+
+	@Query("select c from Branch c "
+			+ "where parentBranch is null and lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'")
 	List<Branch> findTopLevelBranches(@Param("searchTerm") String searchTerm);
-	@Query("select c from Branch c " +
-		      "where parentBranch = :parentBranch  and status <> 'X'") 
+
+	@Query("select c from Branch c " + "where parentBranch = :parentBranch  and status <> 'X'")
 	List<Branch> findBranchesByHirearchy(@Param("parentBranch") String parentBranch);
-	@Query("select c from Branch c " +
-		      "where parentBranch = :parentBranch and lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'") 
-	List<Branch> findBranchesByHirearchy(@Param("parentBranch") String parentBranch,@Param("searchTerm") String searchTerm);
-	@Query("select c from Branch c " +
-		      "where branchType = :branchType  and status <> 'X'") 
+
+	@Query("select c from Branch c "
+			+ "where parentBranch = :parentBranch and lower(c.branchName) like lower(concat('%', :searchTerm, '%')) and status <> 'X'")
+	List<Branch> findBranchesByHirearchy(@Param("parentBranch") String parentBranch,
+			@Param("searchTerm") String searchTerm);
+
+	@Query("select c from Branch c " + "where branchType = :branchType  and status <> 'X'")
 	List<Branch> findBranchesByType(@Param("branchType") Long branchType);
 }

@@ -2,6 +2,7 @@ package com.aakhya.smartcall.application.security.ui;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 import com.aakhya.smartcall.application.SmartCallWebForm;
 import com.aakhya.smartcall.application.admin.entity.Branch;
@@ -14,13 +15,11 @@ import com.vaadin.flow.component.ComponentEventListener;
 import com.vaadin.flow.component.Key;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.charts.model.Label;
 import com.vaadin.flow.component.combobox.ComboBox;
 import com.vaadin.flow.component.datepicker.DatePicker;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
-import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.binder.BeanValidationBinder;
 import com.vaadin.flow.data.binder.Binder;
@@ -51,7 +50,7 @@ public class UserForm extends SmartCallWebForm {
 	private Grid<Role> rolesForUser = new Grid<>(Role.class);
 
 	Button save = new Button("Save");
-	Button delete = new Button("Delete");
+//	Button delete = new Button("Delete");
 	Button close = new Button("Cancel");
 	Binder<User> binder;
 	private User user;
@@ -90,22 +89,27 @@ public class UserForm extends SmartCallWebForm {
 
 	private HorizontalLayout createButtonsLayout() {
 		save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-		delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
+//		delete.addThemeVariants(ButtonVariant.LUMO_ERROR);
 		close.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
 
 		save.addClickShortcut(Key.ENTER);
 		close.addClickShortcut(Key.ESCAPE);
 
 		save.addClickListener(event -> validateAndSave());
-		delete.addClickListener(event -> MessageUtils.confirmDeleteMessageBox(this, objectName));
+//		delete.addClickListener(event -> MessageUtils.confirmDeleteMessageBox(this, objectName));
 		close.addClickListener(event -> fireEvent(new CloseEvent(this)));
 
 		binder.addStatusChangeListener(e -> save.setEnabled(binder.isValid()));
-		return new HorizontalLayout(save, delete, close);
+		return new HorizontalLayout(save, close);
 	}
 
 	private void validateAndSave() {
 		try {
+			Set<Role> selectedRoles = rolesForUser.getSelectedItems();
+			if(null == selectedRoles || selectedRoles.isEmpty()) {
+				MessageUtils.validationMessage("Need to select atleast one role for the User");
+				return;
+			}
 			if(null == user.getPassword())
 				user.setPassword("abcd_1234");
 			binder.writeBean(user);
@@ -123,12 +127,13 @@ public class UserForm extends SmartCallWebForm {
 					UserRole userRole = new UserRole();
 					userRole.setUserId(user.getUserId());
 					userRole.setRoleId(role.getRoleId());
+					userRole.setRoleDescription(role.getDescription());
 					userRoles.add(userRole);
 				}
 				user.setUserRoles(userRoles);
 			}
 			fireEvent(new SaveEvent(this, user));
-			MessageUtils.showSaveNotification(objectName);
+			MessageUtils.successMessage("User saved successfully");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

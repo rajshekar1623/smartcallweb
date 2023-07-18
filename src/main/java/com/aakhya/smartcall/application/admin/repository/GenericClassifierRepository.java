@@ -19,6 +19,11 @@ public interface GenericClassifierRepository extends JpaRepository<GenericClassi
 			+ "where lower(c.description) like lower(concat('%', :searchTerm, '%')) and status <> 'X'")
 	List<GenericClassifier> search(@Param("searchTerm") String searchTerm);
 
+	@Query("select c from GenericClassifier c " + "where c.description = :description "
+			+ " and genericKey = :genericKey and status <> 'X'")
+	List<GenericClassifier> findByDescriptionAndKey(@Param("description") String description,
+			@Param("genericKey") String genericKey);
+	
 	@Query("select c from GenericClassifier c " + "where genericKey = :genericKey and status <> 'X'")
 	List<GenericClassifier> findByGenericKey(@Param("genericKey") String genericKey);
 }

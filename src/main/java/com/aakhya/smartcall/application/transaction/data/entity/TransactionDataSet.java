@@ -113,8 +113,11 @@ public class TransactionDataSet implements Serializable {
 	private String genericString49;
 	private String genericString50;
 	private Long genericNumber1;
+	private String mobileNumber;
 	private Long genericNumber2;
+	private String loanAccountNumber;
 	private Long genericNumber3;
+	private String pincode;
 	private Long genericNumber4;
 	private Long genericNumber5;
 	private Long genericNumber6;
@@ -262,6 +265,8 @@ public class TransactionDataSet implements Serializable {
 	private Date genericDate48;
 	private Date genericDate49;
 	private Date genericDate50;
+	private String assignedDate;
+	private String assignedTo;
 
 	@Id
 	@Column(name = "datasetid")
@@ -1119,7 +1124,26 @@ public class TransactionDataSet implements Serializable {
 	}
 
 	public void setGenericNumber1(Long genericNumber1) {
+		if(null != genericNumber1)
+			this.mobileNumber = String.valueOf(genericNumber1);
 		this.genericNumber1 = genericNumber1;
+	}
+
+	@Transient
+	public String getMobileNumber() {
+		return mobileNumber;
+	}
+
+	public void setMobileNumber(String mobileNumber) {
+		if(null != mobileNumber) {
+			try {
+				Long mobileNumberLongVal = Long.valueOf(mobileNumber);
+				this.genericNumber1 = mobileNumberLongVal;
+			}catch(NumberFormatException e) {
+				this.genericNumber1 = null;
+			}
+		}
+		this.mobileNumber = mobileNumber;
 	}
 
 	@Column(name = "genericnumber2")
@@ -1128,7 +1152,26 @@ public class TransactionDataSet implements Serializable {
 	}
 
 	public void setGenericNumber2(Long genericNumber2) {
+		if(null != genericNumber2)
+			this.loanAccountNumber = String.valueOf(genericNumber2);
 		this.genericNumber2 = genericNumber2;
+	}
+
+	@Transient
+	public String getLoanAccountNumber() {
+		return loanAccountNumber;
+	}
+
+	public void setLoanAccountNumber(String loanAccountNumber) {
+		if(null != loanAccountNumber) {
+			try {
+				Long loanAcNumber = Long.valueOf(loanAccountNumber);
+				this.genericNumber2 = loanAcNumber;
+			}catch(NumberFormatException e) {
+				this.genericNumber2 = null;
+			}
+		}
+		this.loanAccountNumber = loanAccountNumber;
 	}
 
 	@Column(name = "genericnumber3")
@@ -1140,12 +1183,31 @@ public class TransactionDataSet implements Serializable {
 		this.genericNumber3 = genericNumber3;
 	}
 
+	@Transient
+	public String getPincode() {
+		return pincode;
+	}
+
+	public void setPincode(String pincode) {
+		if(null != pincode) {
+			try {
+				Long pincodeLongVal = Long.valueOf(pincode);
+				this.genericNumber4 = pincodeLongVal;
+			}catch(NumberFormatException e) {
+				this.genericNumber4 = null;
+			}
+		}
+		this.pincode = pincode;
+	}
+
 	@Column(name = "genericnumber4")
 	public Long getGenericNumber4() {
 		return genericNumber4;
 	}
 
 	public void setGenericNumber4(Long genericNumber4) {
+		if(null != genericNumber4)
+			this.pincode = String.valueOf(genericNumber4);
 		this.genericNumber4 = genericNumber4;
 	}
 
@@ -2461,6 +2523,24 @@ public class TransactionDataSet implements Serializable {
 
 	public void setGenericDate50(Date genericDate50) {
 		this.genericDate50 = genericDate50;
+	}
+
+	@Transient
+	public String getAssignedDate() {
+		return assignedDate;
+	}
+
+	public void setAssignedDate(String assignedDate) {
+		this.assignedDate = assignedDate;
+	}
+
+	@Transient
+	public String getAssignedTo() {
+		return assignedTo;
+	}
+
+	public void setAssignedTo(String assignedTo) {
+		this.assignedTo = assignedTo;
 	}
 
 }

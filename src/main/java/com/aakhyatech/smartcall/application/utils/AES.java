@@ -46,5 +46,4 @@ public class AES {
     private static Key generateKey() throws Exception {
         return new SecretKeySpec(keyValue, ALGO);
     }
-
 }

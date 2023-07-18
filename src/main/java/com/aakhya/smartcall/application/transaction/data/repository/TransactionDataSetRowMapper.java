@@ -2,6 +2,8 @@ package com.aakhya.smartcall.application.transaction.data.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.springframework.jdbc.core.RowMapper;
 
@@ -21,6 +23,7 @@ public class TransactionDataSetRowMapper implements RowMapper<TransactionDataSet
 		transactionDataSet.setLastName(rs.getString("LastName"));
 		transactionDataSet.setDateOfBirth(rs.getDate("DateOfBirth"));
 		transactionDataSet.setGender(rs.getLong("Gender"));
+		transactionDataSet.setGenderStr(rs.getString("genderStr"));
 		transactionDataSet.setReligion(rs.getLong("Religion"));
 		transactionDataSet.setSocialCategory(rs.getLong("SocialCategory"));
 		transactionDataSet.setAadhaarNumber(rs.getString("AadhaarNumber"));
@@ -240,7 +243,13 @@ public class TransactionDataSetRowMapper implements RowMapper<TransactionDataSet
 		transactionDataSet.setUpdatedDateTime(rs.getDate("UpdatedDateTime"));
 		transactionDataSet.setRemoveDateTime(rs.getDate("RemoveDateTime"));
 		transactionDataSet.setValidFrom(rs.getDate("ValidFrom"));
-		transactionDataSet.setValidTo (rs.getDate("ValidTo"));
+		transactionDataSet.setValidTo(rs.getDate("ValidTo"));
+		Date activityDateTime = rs.getTimestamp("activityDateTime");
+		if (null != activityDateTime) {
+			String assignedDate = new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(activityDateTime);
+			transactionDataSet.setAssignedDate(assignedDate);
+		}
+		transactionDataSet.setAssignedTo(rs.getString("userName"));
 		return transactionDataSet;
 	}
 

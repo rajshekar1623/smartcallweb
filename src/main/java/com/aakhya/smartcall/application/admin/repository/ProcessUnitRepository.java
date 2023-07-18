@@ -14,8 +14,4 @@ public interface ProcessUnitRepository extends JpaRepository<ProcessUnit, Proces
 	@Query("select c from ProcessUnit c " +
 		      "where lower(c.processingUnitName) like lower(concat('%', :searchTerm, '%')) ") 
 		    List<ProcessUnit> search(@Param("searchTerm") String searchTerm);
-	
-	
-	
-	
 }

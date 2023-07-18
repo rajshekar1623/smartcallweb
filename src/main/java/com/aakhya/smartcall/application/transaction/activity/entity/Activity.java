@@ -476,7 +476,8 @@ public class Activity implements Serializable{
 	public void setGenericDate10(Date genericDate10) {
 		this.genericDate10 = genericDate10;
 	}
-	@OneToMany(mappedBy = "activity",fetch = FetchType.LAZY,cascade = CascadeType.ALL,targetEntity = ActivityDetail.class)
+
+	@OneToMany(mappedBy = "activity",fetch = FetchType.EAGER,cascade = CascadeType.ALL,targetEntity = ActivityDetail.class)
 	public List<ActivityDetail> getActivityDetails() {
 		return activityDetails;
 	}

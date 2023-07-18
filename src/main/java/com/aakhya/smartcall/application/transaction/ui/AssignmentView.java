@@ -24,6 +24,7 @@ import com.aakhya.smartcall.application.security.service.UserService;
 import com.aakhya.smartcall.application.transaction.activity.service.ActivityService;
 import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
 import com.aakhya.smartcall.application.transaction.data.service.TransactionDataSetService;
+import com.aakhyatech.smartcall.application.utils.MessageUtils;
 import com.vaadin.flow.component.AbstractField.ComponentValueChangeEvent;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.Text;
@@ -41,8 +42,6 @@ import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.icon.Icon;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.splitlayout.SplitLayout;
-import com.vaadin.flow.component.splitlayout.SplitLayout.Orientation;
 import com.vaadin.flow.component.textfield.NumberField;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.data.renderer.ComponentRenderer;
@@ -93,7 +92,8 @@ public class AssignmentView extends VerticalLayout {
 	List<Div> errorMessages = new ArrayList<Div>();
 	List<User> users;
 	Map<Integer, Set<TransactionDataSet>> pageSelections = new HashMap<Integer, Set<TransactionDataSet>>();
-
+	Dialog editTransactionDialog;
+	
 	public AssignmentView(TransactionDataSetService service, UserService userService, BranchService branchService,
 			GenericClassifierService genericClassifierService, ActivityService activityService,
 			ProductService productService, SecurityService securityService) {
@@ -179,12 +179,13 @@ public class AssignmentView extends VerticalLayout {
 		grid.setSizeFull();
 		grid.getStyle().set("border", "2px solid Grey");
 		grid.getStyle().set("border-radius", "10px");
-		grid.setColumns("firstName", "dateOfBirth", "genericNumber1", "genericString4", "actionStatus");
+		grid.setColumns("firstName", "genericString2", "genericNumber1", "genericString4", "actionStatus");
 		grid.addColumn(new ComponentRenderer<>(transactionDataSet -> {
 			Button viewDetails = new Button("View Details");
 			viewDetails.addClickListener(e -> editTransactionDataSet(transactionDataSet));
 			return viewDetails;
 		}));
+		grid.getColumnByKey("genericString2").setHeader("Product");
 		grid.getColumnByKey("genericNumber1").setHeader("Mobile Number");
 		grid.getColumnByKey("actionStatus").setHeader("Status");
 		grid.getColumnByKey("genericString4").setHeader("Branch");
@@ -231,6 +232,11 @@ public class AssignmentView extends VerticalLayout {
 	}
 
 	private void pageChange(PageChangeEvent event) {
+		if(selectAll.getValue()) {
+			for(TransactionDataSet dataSet:allDataSets) {
+				grid.select(dataSet);
+			}
+		}else {
 		Integer newPageNo = event.getNewPage();
 		System.out.println("New page no is :: "+newPageNo);
 		Set<TransactionDataSet> newPageSelection = pageSelections.get(newPageNo);
@@ -239,6 +245,7 @@ public class AssignmentView extends VerticalLayout {
 			for (TransactionDataSet dataSet : newPageSelection) {
 				grid.select(dataSet);
 			}
+		}
 		}
 	}
 
@@ -258,7 +265,7 @@ public class AssignmentView extends VerticalLayout {
 		parentBranchCB.addValueChangeListener(e -> changeBranches(e));
 		branchCB = new ComboBox<Branch>("Branch");
 		branchCB.setWidth(100, Unit.PERCENTAGE);
-		branchCB.setItems(branchService.findAllBranches(null));
+		branchCB.setItems(branchService.findAllBranches(null,null));
 		branchCB.setItemLabelGenerator(Branch::getBranchName);
 		branchCB.addValueChangeListener(e -> branchValueChanged());
 		productCB = new ComboBox<Product>("Product");
@@ -266,7 +273,7 @@ public class AssignmentView extends VerticalLayout {
 		List<String> products = new ArrayList<String>();
 		products.add("Personal Loan");
 		products.add("Home Loan");
-		productCB.setItems(productService.findAll(null));
+		productCB.setItems(productService.findAll(null,null));
 		productCB.setItemLabelGenerator(Product::getProductName);
 		userCB = new ComboBox<User>("Assigned To");
 		userCB.setWidth(100, Unit.PERCENTAGE);
@@ -279,8 +286,8 @@ public class AssignmentView extends VerticalLayout {
 
 		dpdQueueCB = new ComboBox<GenericClassifier>("DPD Queue");
 		dpdQueueCB.setWidth(100, Unit.PERCENTAGE);
-		dpdQueueCB.setItems(new GenericClassifier(3738L, "30 day DPD"), new GenericClassifier(3739L, "60 day DPD"),
-				new GenericClassifier(3740L, "Above 60 DPD"));
+		dpdQueueCB.setItems(new GenericClassifier(3738L, "0-30 days"), new GenericClassifier(3739L, "31-60 days"),
+				new GenericClassifier(3740L, "61-90 days"),new GenericClassifier(3750L, "Above 90 days"));
 		dpdQueueCB.setItemLabelGenerator(GenericClassifier::getDescription);
 
 		noOfRecordsFetched = new Label();
@@ -290,6 +297,7 @@ public class AssignmentView extends VerticalLayout {
 		Button searchButton = new Button("Search");
 		searchButton.addClickListener(click -> updateList());
 		selectAll = new Checkbox("Select all records from all pages");
+		selectAll.addValueChangeListener(e -> selectAllValueChanged());
 		printDocs = new Button("Print Documents");
 		printDocs.addClickListener(e -> printDocuments());
 
@@ -308,6 +316,17 @@ public class AssignmentView extends VerticalLayout {
 		return toolbar;
 	}
 
+	private Object selectAllValueChanged() {
+		if(selectAll.getValue()) {
+			for(TransactionDataSet trn:allDataSets) {
+				grid.select(trn);
+			}
+		}else {
+			grid.select(new TransactionDataSet());
+		}
+		return null;
+	}
+
 	private void changeBranches(ComponentValueChangeEvent<ComboBox<Branch>, Branch> e) {
 		Branch selectedCluster = e.getValue();
 		if(null != selectedCluster) {
@@ -324,15 +343,16 @@ public class AssignmentView extends VerticalLayout {
 //			form.setVisible(true);
 //			addClassName("editing");
 //		}
-		Dialog dialog = new Dialog();
+		editTransactionDialog = new Dialog();
 
-		dialog.setHeaderTitle("Transaction Data Detail");
-		TransactionDataSetView transactionDataSetView = new TransactionDataSetView(transactionDataSet,
+		editTransactionDialog.setHeaderTitle("Transaction Data Detail");
+		TransactionDataSetView transactionDataSetView = new TransactionDataSetView(this,service,transactionDataSet,
 				genericClassifierService);
-		Button cancelButton = new Button("Cancel", e -> dialog.close());
-		dialog.add(transactionDataSetView);
-		dialog.getFooter().add(cancelButton);
-		dialog.open();
+		Button saveButton = new Button("Save", e -> transactionDataSetView.save());
+		Button cancelButton = new Button("Cancel", e -> editTransactionDialog.close());
+		editTransactionDialog.add(transactionDataSetView);
+		editTransactionDialog.getFooter().add(saveButton,cancelButton);
+		editTransactionDialog.open();
 	}
 
 	public void printDocuments() {
@@ -383,7 +403,7 @@ public class AssignmentView extends VerticalLayout {
 			Branch branch = branchCB.getValue();
 			User assignedToUser = userCB.getValue();
 			User assignToUser = assignTo.getValue();
-			if (null != branch && null != assignToUser && null != branch.getBranchCode()
+			if (null == assignedToUser && null != branch && null != assignToUser && null != branch.getBranchCode()
 					&& null != assignToUser.getBranchCode()
 					&& !branch.getBranchCode().equals(assignToUser.getBranchCode())) {
 				ConfirmDialog dialog = new ConfirmDialog();
@@ -460,10 +480,13 @@ public class AssignmentView extends VerticalLayout {
 			}
 		}
 		User assignedTo = userCB.getValue();
-		if (null != assignedTo && null != assignedTo.getUserId())
+		if (null != assignedTo && null != assignedTo.getUserId()) {
 			activityService.assignToUser(selectedData, branchMgrUser, assignedTo.getUserId(), userToAssignTo);
-		else
+			MessageUtils.successMessage("Assigned "+selectedData.size()+" Accounts to "+userToAssignTo.getUserName());
+		}else {
 			activityService.assignToUser(selectedData, branchMgrUser, null, userToAssignTo);
+			MessageUtils.successMessage("Assigned "+selectedData.size()+" Accounts to "+userToAssignTo.getUserName());
+		}
 		reset();
 	}
 
@@ -483,7 +506,9 @@ public class AssignmentView extends VerticalLayout {
 		noOfRecordsFetched.setText(label);
 	}
 
-	private void updateList() {
+	public void updateList() {
+		if(null != editTransactionDialog)
+			editTransactionDialog.close();
 		String parentBranchCode = null;
 		String branchCode = null, product = null, assignedTo = null;
 		Double mobileNumberDouble = mobileNumber.getValue();

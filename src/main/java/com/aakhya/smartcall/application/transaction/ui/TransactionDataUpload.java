@@ -411,6 +411,7 @@ public class TransactionDataUpload extends VerticalLayout {
 //			dialog.setModal(true);
 //			dialog.open();
 			transactionDataSetService.createTransactionDataSet(transactionDataSets);
+			MessageUtils.successMessage("File was uploaded successfully!!!");
 		} catch (Exception e) {
 			e.printStackTrace();
 			Notification.show("Upload failed", 15000, Notification.Position.MIDDLE);

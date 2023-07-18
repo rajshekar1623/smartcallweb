@@ -1,5 +1,7 @@
 package com.aakhya.smartcall.application.product.ui;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.annotation.security.PermitAll;
@@ -11,16 +13,16 @@ import com.aakhya.smartcall.application.admin.service.GenericClassifierService;
 import com.aakhya.smartcall.application.admin.ui.AdminMainLayout;
 import com.aakhya.smartcall.application.product.entity.Product;
 import com.aakhya.smartcall.application.product.service.ProductService;
+import com.aakhyatech.smartcall.application.utils.MessageUtils;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
-import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
-import com.vaadin.flow.data.value.ValueChangeMode;
 import com.vaadin.flow.router.Route;
 
 @Route(value = "product", layout = AdminMainLayout.class)
@@ -32,7 +34,9 @@ public class ProductView extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = -2474642139276717277L;
 	PaginatedGrid<Product, ?> grid = new PaginatedGrid<>(Product.class);
-	TextField filterText = new TextField();
+	TextField productNameFilter = new TextField();
+	TextField productCodeFilter = new TextField();
+	Label noOfRecordsFetched = new Label();
 	ProductForm form;
 	ProductService service;
 	GenericClassifierService classifierService;
@@ -68,7 +72,7 @@ public class ProductView extends VerticalLayout {
 
 	private void configureForm() {
 		form = new ProductForm(classifierService.findByGenericKey(GenericKeyType.BRANCH_TYPE.getValue()),
-				service.findAll(null));
+				service.findAll(null,null));
 //        form.setWidth("25em");
 		form.addListener(ProductForm.SaveEvent.class, this::saveProduct);
 		form.addListener(ProductForm.DeleteEvent.class, this::deleteContact);
@@ -101,20 +105,35 @@ public class ProductView extends VerticalLayout {
 	}
 
 	private HorizontalLayout getToolbar() {
-		filterText.setPlaceholder("Filter by name...");
-		filterText.setClearButtonVisible(true);
-		filterText.setValueChangeMode(ValueChangeMode.LAZY);
+		productNameFilter.setPlaceholder("Filter by Product Name...");
+		productNameFilter.setClearButtonVisible(true);
+		
+		productCodeFilter.setPlaceholder("Filter by Product Code...");
+		productCodeFilter.setClearButtonVisible(true);
 		
 		Button search = new Button("Search");
 		search.addClickListener(click -> updateList());
-		Button addContactButton = new Button("Add Product");
-		addContactButton.addClickListener(click -> addContact());
+		
+		Button addProduct = new Button("Add Product");
+		addProduct.addClickListener(click -> addContact());
+		
+		Button reset = new Button("Reset");
+		reset.addClickListener(click -> reset());
+		
 		Button deleteProducts = new Button("Delete");
 		deleteProducts.addClickListener(click -> deleteProducts());
 
-		HorizontalLayout toolbar = new HorizontalLayout(filterText, search,addContactButton,deleteProducts);
+		HorizontalLayout toolbar = new HorizontalLayout(productNameFilter, productCodeFilter,
+				search,addProduct,reset,deleteProducts,noOfRecordsFetched);
+		toolbar.setVerticalComponentAlignment(Alignment.CENTER, noOfRecordsFetched);
 		toolbar.addClassName("toolbar");
 		return toolbar;
+	}
+	
+	private void reset() {
+		productNameFilter.setValue("");
+		productCodeFilter.setValue("");
+		grid.setItems(new ArrayList<Product>());
 	}
 
 	private void deleteProducts() {
@@ -128,7 +147,7 @@ public class ProductView extends VerticalLayout {
 			dialog.addConfirmListener(event -> finalDelete(products));
 			dialog.open();
 		}else
-			Notification.show("No records selected for delete", 5000, Notification.Position.MIDDLE);
+			MessageUtils.validationMessage("No records seleted");
 	}
 	
 	public void finalDelete(Set<Product> products) {
@@ -158,7 +177,10 @@ public class ProductView extends VerticalLayout {
 	}
 
 	private void updateList() {
-		grid.setItems(service.findAll(filterText.getValue()));
+		List<Product> products = service.findAll(productNameFilter.getValue(),productCodeFilter.getValue());
+		grid.setItems(products);
+		noOfRecordsFetched.setText("No of products fetched is : " + products.size());
+		noOfRecordsFetched.getStyle().set("color", "red");
 		content.setSplitterPosition(100);
 	}
 }

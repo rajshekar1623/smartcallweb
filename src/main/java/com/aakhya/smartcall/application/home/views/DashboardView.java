@@ -17,44 +17,44 @@ import com.vaadin.flow.router.Route;
 @Route(value = "", layout = MainLayout.class)
 @PageTitle("Dashboard | Aakhya Smartcall")
 public class DashboardView extends VerticalLayout {
-    /**
+	/**
 	 * 
 	 */
 	private static final long serialVersionUID = -7629072409316274961L;
 	private final DashBoardService service;
 
-    public DashboardView(DashBoardService service) { 
-        this.service = service;
-        addClassName("dashboard-view");
+	public DashboardView(DashBoardService service) {
+		this.service = service;
+		addClassName("dashboard-view");
 //        setDefaultHorizontalComponentAlignment(Alignment.CENTER);
-        setSizeFull();
-        HorizontalLayout line1 = new HorizontalLayout();
-        line1.add(getActivitySummaryBar(),getActivitySummaryUserGauge());
-        HorizontalLayout line2 = new HorizontalLayout();
-        line2.add(getBarchart1(),getBarchart2());
-        add(line1,line2);
-    }
+		setSizeFull();
+		HorizontalLayout line1 = new HorizontalLayout();
+		line1.add(getActivitySummaryBar(), getActivitySummaryUserGauge());
+		HorizontalLayout line2 = new HorizontalLayout();
+		line2.add(getBarchart1(), getBarchart2());
+		add(line1, line2);
+	}
 
-    private Component getActivitySummaryBar() {
-    	List<ActivitySummary> summaries = service.getActivitySummaryByCluster();
-    	System.out.println("No of ActivitySummary in DashboardView is :: "+summaries.size());
-    	ActivitySummaryBarChart barchartTest = new ActivitySummaryBarChart(summaries);
-    	return barchartTest;
-    }
+	private Component getActivitySummaryBar() {
+		List<ActivitySummary> summaries = service.getActivitySummaryByCluster();
+		System.out.println("No of ActivitySummary in DashboardView is :: " + summaries.size());
+		ActivitySummaryBarChart barchartTest = new ActivitySummaryBarChart(summaries);
+		return barchartTest;
+	}
 
-    private Component getActivitySummaryUserGauge() {
-    	List<ActivitySummaryUser> activitySummaryUsers = service.getActivitySummaryUserWise(null, null, null, null);
-    	ActivityByUserDial activityByUserDial = new ActivityByUserDial(activitySummaryUsers);
-    	return activityByUserDial;
-    }
-    
-    private Component getBarchart1() {
-    	BarChart1 chart1 = new BarChart1();
-    	return chart1;
-    }
-    
-    private Component getBarchart2() {
-    	BarChart2 chart1 = new BarChart2();
-    	return chart1;
-    }
+	private Component getActivitySummaryUserGauge() {
+		List<ActivitySummaryUser> activitySummaryUsers = service.getActivitySummaryUserWise(null, null, null, null);
+		ActivityByUserDial activityByUserDial = new ActivityByUserDial(activitySummaryUsers);
+		return activityByUserDial;
+	}
+
+	private Component getBarchart1() {
+		BarChart1 chart1 = new BarChart1();
+		return chart1;
+	}
+
+	private Component getBarchart2() {
+		BarChart2 chart1 = new BarChart2();
+		return chart1;
+	}
 }

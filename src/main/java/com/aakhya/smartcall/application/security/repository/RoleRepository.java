@@ -10,7 +10,10 @@ import com.aakhya.smartcall.application.security.entity.Role;
 
 public interface RoleRepository extends JpaRepository<Role, Long> {
 
-	@Query("select c from Role c " +
-		      "where lower(c.description) like lower(concat('%', :searchTerm, '%')) ") 
+	@Query("select c from Role c "
+			+ "where lower(c.description) like lower(concat('%', :searchTerm, '%')) and c.status <> 'X' ")
 	List<Role> search(@Param("searchTerm") String searchTerm);
+
+	@Query("select c from Role c where c.status <> 'X' ")
+	List<Role> findAllRoles();
 }

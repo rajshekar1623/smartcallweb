@@ -10,50 +10,41 @@ import com.aakhya.smartcall.application.document.entity.Document;
 import com.aakhya.smartcall.application.document.entity.DocumentPK;
 import com.aakhya.smartcall.application.document.repository.DocumentRepository;
 
-
 @Service
 public class DocumentService {
 
-	
 	@Autowired
 	private DocumentRepository documentRepository;
-	
-	
-public List<Document> findAllDocuments(){
-		
+
+	public List<Document> findAllDocuments() {
+
 		List<Document> documents = documentRepository.findAll();
-		
+
 		return documents;
-		
+
 	}
 
+	public Document findByPrimaryKey(DocumentPK documentPK) {
 
-public Document findByPrimaryKey(DocumentPK documentPK) {
-	
-	Optional<Document> op = documentRepository.findById(documentPK);
-	
-	if(op.isPresent()) {
-		
-		Document doc = op.get();
-		
-		return doc;
+		Optional<Document> op = documentRepository.findById(documentPK);
+
+		if (op.isPresent()) {
+
+			Document doc = op.get();
+
+			return doc;
+		} else {
+			return null;
+		}
 	}
-	else {
-		return null;
+
+	public void saveDocument(Document document) {
+
+		if (null != document) {
+			documentRepository.save(document);
+
+		}
+
 	}
-}
 
-
-public void saveDocument(Document document) {
-	
-	if(null!= document) {
-		documentRepository.save(document);
-		
-	}
-	
-}
-
-
-	
-	
 }

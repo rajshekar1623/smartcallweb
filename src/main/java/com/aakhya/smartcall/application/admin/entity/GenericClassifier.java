@@ -91,6 +91,9 @@ public class GenericClassifier implements Serializable {
 		return genericKeyDescription;
 	}
 	public void setGenericKeyDescription(String genericKeyDescription) {
+		if(null != genericKey && !genericKey.isEmpty()
+				&& null != genericKeyDescription && !genericKeyDescription.isEmpty())
+			this.key = new GenericKey(genericKey,genericKeyDescription);
 		this.genericKeyDescription = genericKeyDescription;
 	}
 	@Transient

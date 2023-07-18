@@ -25,59 +25,6 @@ public class DashboardJdbcRepocitory {
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public List<ActivitySummary> getActivitySummaryByCluster(){
-		List<ActivitySummary> summaries = new ArrayList<>();
-		StringBuffer query = new StringBuffer();
-		query.append(" select 'Guntur' clusterName,sum(assignCount) assigned,sum(calledOnes) once,sum(calledTwice) twice,sum(calledThrice) thrice, ");
-		query.append(" 	sum(calledMoneThanthrice) morethanThrice from ( ");
-		query.append(" 	select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
-		query.append(" 	assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
-		query.append(" dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
-		query.append(" 	dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
-		query.append(" 	dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
-		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
-		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
-		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
-		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'GU') ) A ");
-		query.append(" 		 union ");
-		query.append(" 		 select 'Krishna' clusterName,sum(assignCount),sum(calledOnes),sum(calledTwice),sum(calledThrice),sum(calledMoneThanthrice) from ( ");
-		query.append(" 		 select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
-		query.append(" 		 assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
-		query.append(" 		dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
-		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
-		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
-		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
-		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
-		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
-		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'KR') ) A ");
-		query.append(" 		 union ");
-		query.append(" 		 select 'Vishakapatinum' clusterName,sum(assignCount),sum(calledOnes),sum(calledTwice),sum(calledThrice),sum(calledMoneThanthrice) from ( ");
-		query.append(" 		 select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
-		query.append(" 		 assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
-		query.append(" 		dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
-		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
-		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
-		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
-		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
-		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
-		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'VS') ) A ");
-		summaries = namedParameterJdbcTemplate.query(query.toString(),  new RowMapper() {
-
-			@Override
-			public ActivitySummary mapRow(ResultSet rs, int rowNum) throws SQLException {
-				ActivitySummary activitySummary = new ActivitySummary();
-				activitySummary.setBranchName(rs.getString("clusterName"));
-				activitySummary.setNoOfAccountsAssigned(rs.getInt("assigned"));
-				activitySummary.setNoOfAcsCalledOnes(rs.getInt("once"));
-				activitySummary.setNoOfAcsCalledTwice(rs.getInt("twice"));
-				activitySummary.setNoOfAcsCalledThrice(rs.getInt("thrice"));
-				activitySummary.setNoOfAcsCalledMoreThanThrice(rs.getInt("morethanThrice"));
-				return activitySummary;
-			}
-		});
-		return summaries;
-	}
-	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<ActivitySummary> getActivitySummaryBranchWise(Date fromDate, Date toDate, Branch cluster,
 			Branch branch) {
 		List<ActivitySummary> summaries = new ArrayList<ActivitySummary>();
@@ -205,11 +152,11 @@ public class DashboardJdbcRepocitory {
 		List<ActivitySummaryUser> summaries = new ArrayList<ActivitySummaryUser>();
 		Map<String, Object> params = new HashMap<String, Object>();
 		StringBuffer query = new StringBuffer();
-		query.append(" select dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName, ");
-		query.append(" assignCount,case when calledOnes is null then 0 else calledOnes end calledOnes , ");
-		query.append(" case when calledTwice is null then 0 else calledTwice end calledTwice, ");
-		query.append(" case when calledThrice is null then 0 else calledThrice end calledThrice, ");
-		query.append(" case when calledMoneThanthrice is null then 0 else calledMoneThanthrice end calledMoneThanthrice from  ");
+		query.append(" select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName, ");
+		query.append(" assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes , ");
+		query.append(" dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice, ");
+		query.append(" dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice, ");
+		query.append(" dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from ");
 		query.append(" (select userId,branchCode,count(1) assignCount ");
 		query.append(" from sc_activity a where a.activityDescription = 'ASSIGN' ");
 		if (null != fromDate && null != toDate) {
@@ -218,92 +165,16 @@ public class DashboardJdbcRepocitory {
 			params.put("fromDate", fromDate);
 			params.put("toDate", toDate);
 		}
+		query.append(" group by userId,branchCode ) assgn  where 1 = 1 ");
+		
 		if (null != cluster) {
-			query.append(" and a.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
+			query.append(" and assgn.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
 			params.put("cluster", cluster.getBranchCode());
 		}
 		if (null != branch) {
-			query.append(" and a.branchCode =:branch");
+			query.append(" and assgn.branchCode =:branch");
 			params.put("branch", branch.getBranchCode());
 		}
-		query.append(" group by userId,branchCode ) assgn ");
-		query.append(" left outer join  ");
-		query.append(" (select userId,branchCode,count(dataSetId) calledOnes ");
-		query.append(" from sc_activity a where a.activityDescription = 'CALL' ");
-		if (null != fromDate && null != toDate) {
-			query.append(" and convert(varchar,a.activityDateTime,105) >= convert(varchar,:fromDate,105) ");
-			query.append(" and convert(varchar,a.activityDateTime,105) <= convert(varchar,:toDate,105) ");
-			params.put("fromDate", fromDate);
-			params.put("toDate", toDate);
-		}
-		if (null != cluster) {
-			query.append(" and a.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
-			params.put("cluster", cluster.getBranchCode());
-		}
-		if (null != branch) {
-			query.append(" and a.branchCode =:branch");
-			params.put("branch", branch.getBranchCode());
-		}
-		query.append(" group by userId,branchCode having count(dataSetId) = 1) cone ");
-		query.append(" on(assgn.branchCode = cone.branchCode) ");
-		query.append(" left outer join  ");
-		query.append(" (select userId,branchCode,count(dataSetId) calledTwice ");
-		query.append(" from sc_activity a where a.activityDescription = 'CALL' ");
-		if (null != fromDate && null != toDate) {
-			query.append(" and convert(varchar,a.activityDateTime,105) >= convert(varchar,:fromDate,105) ");
-			query.append(" and convert(varchar,a.activityDateTime,105) <= convert(varchar,:toDate,105) ");
-			params.put("fromDate", fromDate);
-			params.put("toDate", toDate);
-		}
-		if (null != cluster) {
-			query.append(" and a.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
-			params.put("cluster", cluster.getBranchCode());
-		}
-		if (null != branch) {
-			query.append(" and a.branchCode =:branch");
-			params.put("branch", branch.getBranchCode());
-		}
-		query.append(" group by userId,branchCode having count(dataSetId) = 2 ) ctwice ");
-		query.append(" on(assgn.branchCode = ctwice.branchCode) ");
-		query.append(" left outer join  ");
-		query.append(" (select userId,branchCode,count(dataSetId) calledThrice ");
-		query.append(" from sc_activity a where a.activityDescription = 'CALL' ");
-		if (null != fromDate && null != toDate) {
-			query.append(" and convert(varchar,a.activityDateTime,105) >= convert(varchar,:fromDate,105) ");
-			query.append(" and convert(varchar,a.activityDateTime,105) <= convert(varchar,:toDate,105) ");
-			params.put("fromDate", fromDate);
-			params.put("toDate", toDate);
-		}
-		if (null != cluster) {
-			query.append(" and a.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
-			params.put("cluster", cluster.getBranchCode());
-		}
-		if (null != branch) {
-			query.append(" and a.branchCode =:branch");
-			params.put("branch", branch.getBranchCode());
-		}
-		query.append(" group by userId,branchCode having count(dataSetId) = 3) cthrice ");
-		query.append(" on(assgn.branchCode = cthrice.branchCode) ");
-		query.append(" left outer join  ");
-		query.append(" (select userId,branchCode,count(dataSetId) calledMoneThanthrice ");
-		query.append(" from sc_activity a where a.activityDescription = 'CALL' ");
-		if (null != fromDate && null != toDate) {
-			query.append(" and convert(varchar,a.activityDateTime,105) >= convert(varchar,:fromDate,105) ");
-			query.append(" and convert(varchar,a.activityDateTime,105) <= convert(varchar,:toDate,105) ");
-			params.put("fromDate", fromDate);
-			params.put("toDate", toDate);
-		}
-		if (null != cluster) {
-			query.append(" and a.branchCode in (select branchCode from sc_branch where parentBranch = :cluster) ");
-			params.put("cluster", cluster.getBranchCode());
-		}
-		if (null != branch) {
-			query.append(" and a.branchCode =:branch");
-			params.put("branch", branch.getBranchCode());
-		}
-		query.append(" group by userId,branchCode having count(dataSetId) > 3) cMth ");
-		query.append(" on(assgn.branchCode = cMth.branchCode) ");
-		query.append(" order by  dbo.fn_getBranchName(assgn.branchCode,1) ");
 		summaries = namedParameterJdbcTemplate.query(query.toString(),params, new RowMapper() {
 
 			@Override
@@ -338,11 +209,59 @@ public class DashboardJdbcRepocitory {
 		});
 		return summaries;
 	}
-	
-	public List<CashCollection> findCashCollectionByCluster(){
-		return null;
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<ActivitySummary> getActivitySummaryByCluster(){
+		List<ActivitySummary> summaries = new ArrayList<>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select 'Guntur' clusterName,sum(assignCount) assigned,sum(calledOnes) once,sum(calledTwice) twice,sum(calledThrice) thrice, ");
+		query.append(" 	sum(calledMoneThanthrice) morethanThrice from ( ");
+		query.append(" 	select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
+		query.append(" 	assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
+		query.append(" dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
+		query.append(" 	dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
+		query.append(" 	dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
+		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
+		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
+		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
+		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'GU') ) A ");
+		query.append(" 		 union ");
+		query.append(" 		 select 'Krishna' clusterName,sum(assignCount),sum(calledOnes),sum(calledTwice),sum(calledThrice),sum(calledMoneThanthrice) from ( ");
+		query.append(" 		 select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
+		query.append(" 		 assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
+		query.append(" 		dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
+		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
+		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
+		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
+		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
+		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
+		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'KR') ) A ");
+		query.append(" 		 union ");
+		query.append(" 		 select 'Vishakapatinum' clusterName,sum(assignCount),sum(calledOnes),sum(calledTwice),sum(calledThrice),sum(calledMoneThanthrice) from ( ");
+		query.append(" 		 select distinct dbo.fn_getUserName(assgn.userId,1) userName,dbo.fn_getBranchName(assgn.branchCode,1) branchName,  ");
+		query.append(" 		 assignCount,dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,1) calledOnes ,  ");
+		query.append(" 		dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,2) calledTwice,  ");
+		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,3) calledThrice,  ");
+		query.append(" 		 dbo.fn_getCallsCount(assgn.userId,assgn.branchCode,4) calledMoneThanthrice from   ");
+		query.append(" 		 (select userId,branchCode,count(1) assignCount  ");
+		query.append(" 		 from sc_activity a where a.activityDescription = 'ASSIGN'  ");
+		query.append(" 		 group by userId,branchCode ) assgn where 1 = 1  ");
+		query.append(" 		 and assgn.branchCode in (select branchCode from sc_branch where parentBranch = 'VS') ) A ");
+		summaries = namedParameterJdbcTemplate.query(query.toString(),  new RowMapper() {
+
+			@Override
+			public ActivitySummary mapRow(ResultSet rs, int rowNum) throws SQLException {
+				ActivitySummary activitySummary = new ActivitySummary();
+				activitySummary.setBranchName(rs.getString("clusterName"));
+				activitySummary.setNoOfAccountsAssigned(rs.getInt("assigned"));
+				activitySummary.setNoOfAcsCalledOnes(rs.getInt("once"));
+				activitySummary.setNoOfAcsCalledTwice(rs.getInt("twice"));
+				activitySummary.setNoOfAcsCalledThrice(rs.getInt("thrice"));
+				activitySummary.setNoOfAcsCalledMoreThanThrice(rs.getInt("morethanThrice"));
+				return activitySummary;
+			}
+		});
+		return summaries;
 	}
-	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public List<CashCollection> findCashCollections(Date fromDate, Date toDate, Branch cluster,
 			Branch branch){

@@ -97,4 +97,29 @@ public class UserRole implements Serializable{
 		}else
 			return "";
 	}
+	
+	@Override
+	public boolean equals(Object other) {
+		if(other instanceof UserRole) {
+			UserRole otherUserRole = (UserRole)other;
+			try {
+				final boolean areEqual = userId.equals(otherUserRole.userId)
+						&& roleId.equals(otherUserRole.roleId);
+				return areEqual;
+			} catch (Exception e) {
+				if(System.identityHashCode(this) == System.identityHashCode(other))
+					return true;
+				else
+					return false;
+			}
+		}
+		return false;
+	}
+	
+	@Override
+	public int hashCode() {
+		if(null != userId && null != roleId)
+			return userId.hashCode()+roleId.hashCode();
+		else return 777;
+	}
 }

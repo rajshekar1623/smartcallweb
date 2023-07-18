@@ -56,6 +56,5 @@ public class CashCollection implements Serializable {
 	}
 	public void setAmountCollected(String amountCollected) {
 		this.amountCollected = amountCollected;
-	}
-	
+	}	
 }

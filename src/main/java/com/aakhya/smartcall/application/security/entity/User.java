@@ -524,7 +524,8 @@ public class User implements Serializable{
 	public void setGenericNumber10(BigDecimal genericNumber10) {
 		this.genericNumber10 = genericNumber10;
 	}
-	@OneToMany(mappedBy = "user", fetch = FetchType.EAGER,cascade = CascadeType.ALL, targetEntity = UserRole.class)
+
+	@OneToMany(mappedBy = "user", orphanRemoval = true ,fetch = FetchType.EAGER,cascade = CascadeType.ALL, targetEntity = UserRole.class)
 	public List<UserRole> getUserRoles() {
 		return userRoles;
 	}

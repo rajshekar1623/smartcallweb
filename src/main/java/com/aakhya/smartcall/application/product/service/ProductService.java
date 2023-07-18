@@ -16,11 +16,17 @@ public class ProductService {
 	@Autowired
 	private ProductRepository productRepository;
 	
-	public List<Product> findAll(String searchTerm){
-		if(null != searchTerm && searchTerm.length() > 0)
-			return productRepository.findAllProducts(searchTerm);
-		else
+	public List<Product> findAll(String productName,String productCode){
+		if(null != productName && !productName.isEmpty()
+				&& null != productCode && !productCode.isEmpty()) {
+			return productRepository.findByNameAndCode(productName, productCode);
+		}else if(null != productName && !productName.isEmpty()) {
+			return productRepository.findByName(productName);
+		}else if(null != productCode && !productCode.isEmpty()) {
+			return productRepository.findByCode(productCode);
+		}else {
 			return productRepository.findAll();
+		}
 	}
 	
 	public void save(Product product) {

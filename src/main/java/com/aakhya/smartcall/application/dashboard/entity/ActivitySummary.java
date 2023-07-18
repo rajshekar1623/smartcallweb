@@ -49,6 +49,5 @@ public class ActivitySummary implements Serializable{
 	}
 	public void setNoOfAcsCalledMoreThanThrice(Integer noOfAcsCalledMoreThanThrice) {
 		this.noOfAcsCalledMoreThanThrice = noOfAcsCalledMoreThanThrice;
-	}
-	
+	}	
 }

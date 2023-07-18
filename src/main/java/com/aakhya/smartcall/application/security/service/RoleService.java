@@ -1,6 +1,7 @@
 package com.aakhya.smartcall.application.security.service;
 
 import java.util.List;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,7 +22,7 @@ public class RoleService {
 	
 	public List<Role> findAll(String roleDescriptionFilter){
 		if(null == roleDescriptionFilter || roleDescriptionFilter.isEmpty()) {
-			return roleRepository.findAll();
+			return roleRepository.findAllRoles();
 		}else {
 			return roleRepository.search(roleDescriptionFilter);
 		}
@@ -43,6 +44,15 @@ public class RoleService {
 		if(null != role) {
 			role.setStatus(RecordStatusType.DELETED.getValue());
 			roleRepository.save(role);
+		}
+	}
+	
+	public void deleteRoles(Set<Role> roles) {
+		if(null != roles && !roles.isEmpty()) {
+			for(Role role:roles) {
+				role.setStatus(RecordStatusType.DELETED.getValue());
+				roleRepository.save(role);
+			}
 		}
 	}
 }

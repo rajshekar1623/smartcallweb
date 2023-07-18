@@ -195,6 +195,11 @@
 		   <artifactId>so-charts</artifactId>
 		   <version>3.2.4</version>
 		</dependency>
+		<dependency>
+		   <groupId>org.vaadin.olli</groupId>
+		   <artifactId>browser-opener</artifactId>
+		   <version>2.0.0</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<defaultGoal>spring-boot:run</defaultGoal>

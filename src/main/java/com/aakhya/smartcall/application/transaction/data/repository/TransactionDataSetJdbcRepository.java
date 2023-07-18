@@ -1,11 +1,14 @@
 package com.aakhya.smartcall.application.transaction.data.repository;
 
+import java.sql.PreparedStatement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -16,116 +19,426 @@ public class TransactionDataSetJdbcRepository {
 
 	@Autowired
 	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
-	
-	public List<TransactionDataSet> findTransactionDataSetForAssignment(Long mobileNumber,
-			String parentBranchCode,String branchCode,String assignedTo,String product,
-			Long queue,Long dpdQueue,Long pincode,Long loanAccountNumber,
-			String firstName){
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+
+	public List<TransactionDataSet> findTransactionDataSetForAssignment(Long mobileNumber, String parentBranchCode,
+			String branchCode, String assignedTo, String product, Long queue, Long dpdQueue, Long pincode,
+			Long loanAccountNumber, String firstName) {
 		List<TransactionDataSet> transactionDataSetForAssignment = new ArrayList<TransactionDataSet>();
 		StringBuffer query = new StringBuffer();
-		query.append("select dataSetId,companyId,dataSetType,dataSetDescription,firstName,middleName,");
-		query.append(" lastName,dateOfBirth,gender,religion,socialCategory,aadhaarNumber,");
+		query.append("select trn.dataSetId,trn.companyId,dataSetType,dataSetDescription,firstName,middleName,");
+		query.append(" lastName,dateOfBirth,gender,dbo.fn_getGenClass(gender,trn.companyId) genderStr,");
+		query.append(" religion,dbo.fn_getGenClass(religion,trn.companyId) religionStr,socialCategory,");
+		query.append(" dbo.fn_getGenClass(religion,trn.companyId) socialCategoryStr,aadhaarNumber,");
 		query.append(" voterId,drivingLicenseNumber,panCardNumber,gramPanchayat,village,");
-		query.append(" branchCode,genericString1,genericString2,genericString3,genericString4,");
-		query.append("genericString5,genericString6,genericString7,	genericString8,	genericString9,	genericString10,");
-		query.append("genericString11,genericString12,genericString13,genericString14,");
-		query.append("genericString15,genericString16,genericString17,genericString18,");
-		query.append("genericString19,genericString20,genericString21,genericString22,");
-		query.append("genericString23,genericString24,genericString25,genericString26,");
-		query.append("genericString27,genericString28,genericString29,genericString30,");
-		query.append("genericString31,genericString32,genericString33,genericString35,");
-		query.append("genericString36,genericString37,genericString38,genericString39,");
-		query.append("genericString40,genericString41,genericString42,genericString43,");
-		query.append("genericString44,genericString45,genericString46,genericString47,");
-		query.append("genericString48,genericString49,genericString50,genericNumber1,");
-		query.append("genericNumber2,genericNumber3,genericNumber4,genericNumber5,");
-		query.append("genericNumber6,genericNumber7,genericNumber8,genericNumber9,");
-		query.append("genericNumber10,genericNumber11,genericNumber12,genericNumber13,");
-		query.append("genericNumber14,genericNumber15,genericNumber16,genericNumber17,");
-		query.append("genericNumber18,genericNumber19,genericNumber20,genericNumber21,");
-		query.append("genericNumber22,genericNumber23,genericNumber24,genericNumber25,");
-		query.append("genericNumber26,genericNumber27,genericNumber28,genericNumber29,");
-		query.append("genericNumber30,genericNumber31,genericNumber32,genericNumber33,");
-		query.append("genericNumber34,genericNumber35,genericNumber36,genericNumber37,");
-		query.append("genericNumber38,genericNumber39,genericNumber40,genericNumber41,");
-		query.append("genericNumber42,genericNumber43,genericNumber44,genericNumber45,");
-		query.append("genericNumber46,genericNumber47,genericNumber48,genericNumber49,");
-		query.append("genericNumber50,genericDecimal1,genericDecimal2,genericDecimal3,");
-		query.append("genericDecimal4,genericDecimal5,genericDecimal6,genericDecimal7,");
-		query.append("genericDecimal8,genericDecimal9,genericDecimal10,genericDecimal11,");
-		query.append("genericDecimal12,genericDecimal13,genericDecimal14,genericDecimal15,");
-		query.append("genericDecimal16,genericDecimal17,genericDecimal18,genericDecimal19,");
-		query.append("genericDecimal20,genericDecimal21,genericDecimal22,genericDecimal23,");
-		query.append("genericDecimal24,genericDecimal25,genericDecimal26,genericDecimal27,");
-		query.append("genericDecimal28,genericDecimal29,genericDecimal30,genericDecimal31,");
-		query.append("genericDecimal32,genericDecimal33,genericDecimal34,genericDecimal35,");
-		query.append("genericDecimal36,genericDecimal37,genericDecimal38,genericDecimal39,");
-		query.append("genericDecimal40,genericDecimal41,genericDecimal42,genericDecimal43,");
-		query.append("genericDecimal44,genericDecimal45,genericDecimal46,genericDecimal47,");
-		query.append("genericDecimal48,genericDecimal49,genericDecimal50,genericDate1,genericDate2,genericDate3,genericDate4,genericDate5,genericDate6,genericDate7,");
-		query.append("genericDate8,genericDate9,genericDate10,genericDate11,genericDate12,genericDate13,genericDate14,genericDate15,genericDate16,genericDate17,");
-		query.append("genericDate18,genericDate19,genericDate20,genericDate21,genericDate22,genericDate23,genericDate24,genericDate25,genericDate26,genericDate27,");
-		query.append("genericDate28,genericDate29,genericDate30,genericDate31,genericDate32,genericDate33,genericDate34,genericDate35,genericDate36,genericDate37,");
-		query.append("genericDate38,genericDate39,genericDate40,genericDate41,genericDate42,genericDate43,genericDate44,genericDate45,genericDate46,genericDate47,");
-		query.append("genericDate48,genericDate49,genericDate50,actionType,scheduledDatetime,genericString34,status,createdBy,createdDateTime,");
-		if(null != assignedTo && assignedTo.length() > 0) {
+		query.append(" trn.branchCode,genericString1,genericString2,genericString3,genericString4,");
+		query.append(
+				"trn.genericString5,trn.genericString6,trn.genericString7,	trn.genericString8,	trn.genericString9,	trn.genericString10,");
+		query.append("trn.genericString11,trn.genericString12,trn.genericString13,trn.genericString14,");
+		query.append("trn.genericString15,trn.genericString16,trn.genericString17,trn.genericString18,");
+		query.append("trn.genericString19,trn.genericString20,trn.genericString21,trn.genericString22,");
+		query.append("trn.genericString23,trn.genericString24,trn.genericString25,trn.genericString26,");
+		query.append("trn.genericString27,trn.genericString28,trn.genericString29,trn.genericString30,");
+		query.append("trn.genericString31,trn.genericString32,trn.genericString33,trn.genericString35,");
+		query.append("trn.genericString36,trn.genericString37,trn.genericString38,trn.genericString39,");
+		query.append("trn.genericString40,trn.genericString41,trn.genericString42,trn.genericString43,");
+		query.append("trn.genericString44,trn.genericString45,trn.genericString46,trn.genericString47,");
+		query.append("trn.genericString48,trn.genericString49,trn.genericString50,trn.genericNumber1,");
+		query.append("trn.genericNumber2,trn.genericNumber3,trn.genericNumber4,trn.genericNumber5,");
+		query.append("trn.genericNumber6,trn.genericNumber7,trn.genericNumber8,trn.genericNumber9,");
+		query.append("trn.genericNumber10,trn.genericNumber11,trn.genericNumber12,trn.genericNumber13,");
+		query.append("trn.genericNumber14,trn.genericNumber15,trn.genericNumber16,trn.genericNumber17,");
+		query.append("trn.genericNumber18,trn.genericNumber19,trn.genericNumber20,trn.genericNumber21,");
+		query.append("trn.genericNumber22,trn.genericNumber23,trn.genericNumber24,trn.genericNumber25,");
+		query.append("trn.genericNumber26,trn.genericNumber27,trn.genericNumber28,trn.genericNumber29,");
+		query.append("trn.genericNumber30,trn.genericNumber31,trn.genericNumber32,trn.genericNumber33,");
+		query.append("trn.genericNumber34,trn.genericNumber35,trn.genericNumber36,trn.genericNumber37,");
+		query.append("trn.genericNumber38,trn.genericNumber39,trn.genericNumber40,trn.genericNumber41,");
+		query.append("trn.genericNumber42,trn.genericNumber43,trn.genericNumber44,trn.genericNumber45,");
+		query.append("trn.genericNumber46,trn.genericNumber47,trn.genericNumber48,trn.genericNumber49,");
+		query.append("trn.genericNumber50,trn.genericDecimal1,trn.genericDecimal2,trn.genericDecimal3,");
+		query.append("trn.genericDecimal4,trn.genericDecimal5,trn.genericDecimal6,trn.genericDecimal7,");
+		query.append("trn.genericDecimal8,trn.genericDecimal9,trn.genericDecimal10,trn.genericDecimal11,");
+		query.append("trn.genericDecimal12,trn.genericDecimal13,trn.genericDecimal14,trn.genericDecimal15,");
+		query.append("trn.genericDecimal16,trn.genericDecimal17,trn.genericDecimal18,trn.genericDecimal19,");
+		query.append("trn.genericDecimal20,trn.genericDecimal21,trn.genericDecimal22,trn.genericDecimal23,");
+		query.append("trn.genericDecimal24,trn.genericDecimal25,trn.genericDecimal26,trn.genericDecimal27,");
+		query.append("trn.genericDecimal28,trn.genericDecimal29,trn.genericDecimal30,trn.genericDecimal31,");
+		query.append("trn.genericDecimal32,trn.genericDecimal33,trn.genericDecimal34,trn.genericDecimal35,");
+		query.append("trn.genericDecimal36,trn.genericDecimal37,trn.genericDecimal38,trn.genericDecimal39,");
+		query.append("trn.genericDecimal40,trn.genericDecimal41,trn.genericDecimal42,trn.genericDecimal43,");
+		query.append("trn.genericDecimal44,trn.genericDecimal45,trn.genericDecimal46,trn.genericDecimal47,");
+		query.append(
+				"trn.genericDecimal48,trn.genericDecimal49,trn.genericDecimal50,trn.genericDate1,trn.genericDate2,trn.genericDate3,trn.genericDate4,trn.genericDate5,trn.genericDate6,trn.genericDate7,");
+		query.append(
+				"trn.genericDate8,trn.genericDate9,trn.genericDate10,trn.genericDate11,trn.genericDate12,trn.genericDate13,trn.genericDate14,trn.genericDate15,trn.genericDate16,trn.genericDate17,");
+		query.append(
+				"trn.genericDate18,trn.genericDate19,trn.genericDate20,trn.genericDate21,trn.genericDate22,trn.genericDate23,trn.genericDate24,trn.genericDate25,trn.genericDate26,trn.genericDate27,");
+		query.append(
+				"trn.genericDate28,trn.genericDate29,trn.genericDate30,trn.genericDate31,trn.genericDate32,trn.genericDate33,trn.genericDate34,trn.genericDate35,trn.genericDate36,trn.genericDate37,");
+		query.append(
+				"trn.genericDate38,trn.genericDate39,trn.genericDate40,trn.genericDate41,trn.genericDate42,trn.genericDate43,trn.genericDate44,trn.genericDate45,trn.genericDate46,trn.genericDate47,");
+		query.append(
+				"trn.genericDate48,trn.genericDate49,trn.genericDate50,actionType,scheduledDatetime,trn.genericString34,trn.status,trn.createdBy,trn.createdDateTime,getDate() activityDateTime,null userName,");
+		if (null != assignedTo && assignedTo.length() > 0) {
 			query.append("'Assigned' as actionStatus,");
-		}else
+		} else
 			query.append("'Not Assigned' as actionStatus,");
 		query.append("updatedBy,updatedDateTime,removeDateTime,validFrom,validTo ");
 		query.append(" from sc_transactionDataSet trn where 1 = 1 ");
-		
+
 		Map<String, Object> paramMap = new HashMap<String, Object>();
-		if(null != mobileNumber && !mobileNumber.equals(0L)){
+		if (null != mobileNumber && !mobileNumber.equals(0L)) {
 			query.append(" and genericNumber1 = :mobileNumber");
 			paramMap.put("mobileNumber", mobileNumber);
 		}
-		if(null != pincode && !pincode.equals(0L)) {
+		if (null != pincode && !pincode.equals(0L)) {
 			query.append(" and genericNumber4 = :pincode");
 			paramMap.put("pincode", pincode);
 		}
-		if(null != loanAccountNumber && !loanAccountNumber.equals(0L)) {
+		if (null != loanAccountNumber && !loanAccountNumber.equals(0L)) {
 			query.append(" and genericNumber2 = :loanAccountNumber");
 			paramMap.put("loanAccountNumber", loanAccountNumber);
 		}
-		if(null != firstName && firstName.length() > 0) {
-			query.append(" and firstName like ('%"+firstName+"%')");
+		if (null != firstName && firstName.length() > 0) {
+			query.append(" and firstName like ('%" + firstName + "%')");
 //			paramMap.put("firstName", firstName);
 		}
-		if(null != parentBranchCode && !parentBranchCode.isEmpty()){
-			query.append(" and branchCode in (select branchCode from sc_branch where parentbranch = :parentBranchCode)");
+		if (null != parentBranchCode && !parentBranchCode.isEmpty()) {
+			query.append(
+					" and trn.branchCode in (select branchCode from sc_branch where parentbranch = :parentBranchCode)");
 			paramMap.put("parentBranchCode", parentBranchCode);
 		}
-		if(null != branchCode && branchCode.length() > 0){
-			query.append(" and branchCode = :branchCode");
+		if (null != branchCode && branchCode.length() > 0) {
+			query.append(" and trn.branchCode = :branchCode");
 			paramMap.put("branchCode", branchCode);
 		}
-		if(null != product && product.length() > 0){
+		if (null != product && product.length() > 0) {
 			query.append(" and genericString2 = :product");
 			paramMap.put("product", product);
 		}
-		if(null != queue && !queue.equals(0L)) {
-			query.append(" and dataSetType = :queue");
-			paramMap.put("queue", queue);
-		}
+//		if(null != queue && !queue.equals(0L)) {
+//			query.append(" and dataSetType = :queue");
+//			paramMap.put("queue", queue);
+//		}
 		if(null != dpdQueue && !dpdQueue.equals(0L)) {
 			query.append(" and genericNumber3 = :dpdQueue");
 			paramMap.put("dpdQueue", dpdQueue);
 		}
-		if(null != assignedTo && assignedTo.length() > 0) {
-			query.append(" and dataSetId in (select dataSetId from sc_activity where userId = :assignedTo and activityStatus in ('PENDING','IN-PROCESS'))");
+		if (null != assignedTo && assignedTo.length() > 0) {
+			query.append(
+					" and dataSetId in (select dataSetId from sc_activity where userId = :assignedTo and activityStatus in ('PENDING','IN-PROCESS'))");
 			paramMap.put("assignedTo", assignedTo);
-		}else {
+		} else {
 			query.append(" and dataSetId not in (select dataSetId from sc_activity )");
 		}
 		System.out.println(query);
-		transactionDataSetForAssignment = namedParameterJdbcTemplate.query(query.toString(),
-				paramMap,new TransactionDataSetRowMapper());
+		transactionDataSetForAssignment = namedParameterJdbcTemplate.query(query.toString(), paramMap,
+				new TransactionDataSetRowMapper());
 		return transactionDataSetForAssignment;
 	}
-	
-	public void saveAllTransactions(List<TransactionDataSet> transactionDataSets) {
-//		namedParameterJdbcTemplate.b
+
+	public List<TransactionDataSet> findTransactionDataSetForStatusView(Long mobileNumber, String parentBranchCode,
+			String branchCode, String assignedTo, String product, Long queue, Long dpdQueue, Long pincode,
+			Long loanAccountNumber, String firstName) {
+		List<TransactionDataSet> transactionDataSetForAssignment = new ArrayList<TransactionDataSet>();
+		StringBuffer query = new StringBuffer();
+		query.append("select trn.dataSetId,trn.companyId,dataSetType,dataSetDescription,firstName,middleName,");
+		query.append(" lastName,dateOfBirth,gender,dbo.fn_getGenClass(gender,trn.companyId) genderStr,");
+		query.append(" religion,dbo.fn_getGenClass(religion,trn.companyId) religionStr,socialCategory,");
+		query.append(" dbo.fn_getGenClass(religion,trn.companyId) socialCategoryStr,aadhaarNumber,");
+		query.append(" voterId,drivingLicenseNumber,panCardNumber,gramPanchayat,village,");
+		query.append(" trn.branchCode,trn.genericString1,trn.genericString2,trn.genericString3,trn.genericString4,");
+		query.append(
+				"trn.genericString5,trn.genericString6,trn.genericString7,	trn.genericString8,	trn.genericString9,	trn.genericString10,");
+		query.append("trn.genericString11,trn.genericString12,trn.genericString13,trn.genericString14,");
+		query.append("trn.genericString15,trn.genericString16,trn.genericString17,trn.genericString18,");
+		query.append("trn.genericString19,trn.genericString20,trn.genericString21,trn.genericString22,");
+		query.append("trn.genericString23,trn.genericString24,trn.genericString25,trn.genericString26,");
+		query.append("trn.genericString27,trn.genericString28,trn.genericString29,trn.genericString30,");
+		query.append("trn.genericString31,trn.genericString32,trn.genericString33,trn.genericString35,");
+		query.append("trn.genericString36,trn.genericString37,trn.genericString38,trn.genericString39,");
+		query.append("trn.genericString40,trn.genericString41,trn.genericString42,trn.genericString43,");
+		query.append("trn.genericString44,trn.genericString45,trn.genericString46,trn.genericString47,");
+		query.append("trn.genericString48,trn.genericString49,trn.genericString50,trn.genericNumber1,");
+		query.append("trn.genericNumber2,trn.genericNumber3,trn.genericNumber4,trn.genericNumber5,");
+		query.append("trn.genericNumber6,trn.genericNumber7,trn.genericNumber8,trn.genericNumber9,");
+		query.append("trn.genericNumber10,trn.genericNumber11,trn.genericNumber12,trn.genericNumber13,");
+		query.append("trn.genericNumber14,trn.genericNumber15,trn.genericNumber16,trn.genericNumber17,");
+		query.append("trn.genericNumber18,trn.genericNumber19,trn.genericNumber20,trn.genericNumber21,");
+		query.append("trn.genericNumber22,trn.genericNumber23,trn.genericNumber24,trn.genericNumber25,");
+		query.append("trn.genericNumber26,trn.genericNumber27,trn.genericNumber28,trn.genericNumber29,");
+		query.append("trn.genericNumber30,trn.genericNumber31,trn.genericNumber32,trn.genericNumber33,");
+		query.append("trn.genericNumber34,trn.genericNumber35,trn.genericNumber36,trn.genericNumber37,");
+		query.append("trn.genericNumber38,trn.genericNumber39,trn.genericNumber40,trn.genericNumber41,");
+		query.append("trn.genericNumber42,trn.genericNumber43,trn.genericNumber44,trn.genericNumber45,");
+		query.append("trn.genericNumber46,trn.genericNumber47,trn.genericNumber48,trn.genericNumber49,");
+		query.append("trn.genericNumber50,trn.genericDecimal1,trn.genericDecimal2,trn.genericDecimal3,");
+		query.append("trn.genericDecimal4,trn.genericDecimal5,trn.genericDecimal6,trn.genericDecimal7,");
+		query.append("trn.genericDecimal8,trn.genericDecimal9,trn.genericDecimal10,trn.genericDecimal11,");
+		query.append("trn.genericDecimal12,trn.genericDecimal13,trn.genericDecimal14,trn.genericDecimal15,");
+		query.append("trn.genericDecimal16,trn.genericDecimal17,trn.genericDecimal18,trn.genericDecimal19,");
+		query.append("trn.genericDecimal20,trn.genericDecimal21,trn.genericDecimal22,trn.genericDecimal23,");
+		query.append("trn.genericDecimal24,trn.genericDecimal25,trn.genericDecimal26,trn.genericDecimal27,");
+		query.append("trn.genericDecimal28,trn.genericDecimal29,trn.genericDecimal30,trn.genericDecimal31,");
+		query.append("trn.genericDecimal32,trn.genericDecimal33,trn.genericDecimal34,trn.genericDecimal35,");
+		query.append("trn.genericDecimal36,trn.genericDecimal37,trn.genericDecimal38,trn.genericDecimal39,");
+		query.append("trn.genericDecimal40,trn.genericDecimal41,trn.genericDecimal42,trn.genericDecimal43,");
+		query.append("trn.genericDecimal44,trn.genericDecimal45,trn.genericDecimal46,trn.genericDecimal47,");
+		query.append(
+				"trn.genericDecimal48,trn.genericDecimal49,trn.genericDecimal50,trn.genericDate1,trn.genericDate2,trn.genericDate3,trn.genericDate4,trn.genericDate5,trn.genericDate6,trn.genericDate7,");
+		query.append(
+				"trn.genericDate8,trn.genericDate9,trn.genericDate10,trn.genericDate11,trn.genericDate12,trn.genericDate13,trn.genericDate14,trn.genericDate15,trn.genericDate16,trn.genericDate17,");
+		query.append(
+				"trn.genericDate18,trn.genericDate19,trn.genericDate20,trn.genericDate21,trn.genericDate22,trn.genericDate23,trn.genericDate24,trn.genericDate25,trn.genericDate26,trn.genericDate27,");
+		query.append(
+				"trn.genericDate28,trn.genericDate29,trn.genericDate30,trn.genericDate31,trn.genericDate32,trn.genericDate33,trn.genericDate34,trn.genericDate35,trn.genericDate36,trn.genericDate37,");
+		query.append(
+				"trn.genericDate38,trn.genericDate39,trn.genericDate40,trn.genericDate41,trn.genericDate42,trn.genericDate43,trn.genericDate44,trn.genericDate45,trn.genericDate46,trn.genericDate47,");
+		query.append(
+				"trn.genericDate48,trn.genericDate49,trn.genericDate50,actionType,scheduledDatetime,trn.genericString34,trn.status,trn.createdBy,trn.createdDateTime,");
+		if (null != assignedTo && assignedTo.length() > 0) {
+			query.append("'Assigned' as actionStatus,");
+		} else
+			query.append("'Not Assigned' as actionStatus,");
+		query.append(
+				" trn.updatedBy,trn.updatedDateTime,trn.removeDateTime,trn.validFrom,trn.validTo,act.activityDateTime,dbo.fn_getUserName(act.userId,1) userName ");
+		query.append(" from sc_transactionDataSet trn join sc_activity act  ");
+		query.append(
+				" on (trn.dataSetId = act.dataSetId and act.parentActivity is null and act.activityStatus <> 'RE-ASSIGNED') ");
+		query.append(" where 1 = 1 ");
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		if (null != mobileNumber && !mobileNumber.equals(0L)) {
+			query.append(" and trn.genericNumber1 = :mobileNumber");
+			paramMap.put("mobileNumber", mobileNumber);
+		}
+		if (null != pincode && !pincode.equals(0L)) {
+			query.append(" and trn.genericNumber4 = :pincode");
+			paramMap.put("pincode", pincode);
+		}
+		if (null != loanAccountNumber && !loanAccountNumber.equals(0L)) {
+			query.append(" and trn.genericNumber2 = :loanAccountNumber");
+			paramMap.put("loanAccountNumber", loanAccountNumber);
+		}
+		if (null != firstName && firstName.length() > 0) {
+			query.append(" and firstName like ('%" + firstName + "%')");
+//			paramMap.put("firstName", firstName);
+		}
+		if (null != parentBranchCode && !parentBranchCode.isEmpty()) {
+			query.append(
+					" and trn.branchCode in (select branchCode from sc_branch where parentbranch = :parentBranchCode)");
+			paramMap.put("parentBranchCode", parentBranchCode);
+		}
+		if (null != branchCode && branchCode.length() > 0) {
+			query.append(" and trn.branchCode = :branchCode");
+			paramMap.put("branchCode", branchCode);
+		}
+		if (null != product && product.length() > 0) {
+			query.append(" and trn.genericString2 = :product");
+			paramMap.put("product", product);
+		}
+//		if(null != queue && !queue.equals(0L)) {
+//			query.append(" and trn.dataSetType = :queue");
+//			paramMap.put("queue", queue);
+//		}
+//		if(null != dpdQueue && !dpdQueue.equals(0L)) {
+//			query.append(" and trn.genericNumber3 = :dpdQueue");
+//			paramMap.put("dpdQueue", dpdQueue);
+//		}
+		if (null != assignedTo && assignedTo.length() > 0) {
+			query.append(" and act.userId = :assignedTo ");
+			paramMap.put("assignedTo", assignedTo);
+		}
+		System.out.println(query);
+		transactionDataSetForAssignment = namedParameterJdbcTemplate.query(query.toString(), paramMap,
+				new TransactionDataSetRowMapper());
+		return transactionDataSetForAssignment;
 	}
-	
+
+	public void createTransactions(List<TransactionDataSet> transactions) {
+		String sql = "insert into sc_transactionDataSet (dataSetId,dataSetType,dataSetDescription,"
+				+ "firstName,dateOfBirth,gender,religion,panCardNumber,branchCode,genericString2,"
+				+ "genericString4,genericString5,genericNumber1,genericNumber2,genericNumber3,genericNumber4,"
+				+ "genericDecimal1,genericDecimal4,genericDecimal5,genericDecimal6,genericDecimal7,"
+				+ "genericDate1,genericDate2,companyId,status,createdBy,createdDateTime,removeDateTime,"
+				+ "validFrom,validTo) values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
+		jdbcTemplate.batchUpdate(sql, transactions, 1000,
+				(PreparedStatement ps, TransactionDataSet transactionDataSet) -> {
+					Long dataSetId = transactionDataSet.getDataSetId();
+					ps.setLong(1, dataSetId++);
+					ps.setLong(2, transactionDataSet.getDataSetType());
+					ps.setString(3, transactionDataSet.getDataSetDescription());
+					ps.setString(4, transactionDataSet.getFirstName());
+					if (null != transactionDataSet.getDateOfBirth())
+						ps.setDate(5, new java.sql.Date(transactionDataSet.getDateOfBirth().getTime()));
+					else
+						ps.setNull(5, Types.DATE);
+					if (null != transactionDataSet.getGender())
+						ps.setLong(6, transactionDataSet.getGender());
+					else
+						ps.setNull(6, Types.BIGINT);
+					if (null != transactionDataSet.getReligion())
+						ps.setLong(7, transactionDataSet.getReligion());
+					else
+						ps.setNull(7, Types.BIGINT);
+					if (null != transactionDataSet.getPanCardNumber())
+						ps.setString(8, transactionDataSet.getPanCardNumber());
+					else
+						ps.setNull(8, Types.VARCHAR);
+					if (null != transactionDataSet.getBranchCode())
+						ps.setString(9, transactionDataSet.getBranchCode());
+					else
+						ps.setNull(9, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString2())
+						ps.setString(10, transactionDataSet.getGenericString2());
+					else
+						ps.setNull(10, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString4())
+						ps.setString(11, transactionDataSet.getGenericString4());
+					else
+						ps.setNull(11, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString5())
+						ps.setString(12, transactionDataSet.getGenericString5());
+					else
+						ps.setNull(12, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericNumber1())
+						ps.setLong(13, transactionDataSet.getGenericNumber1());
+					else
+						ps.setNull(13, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber2())
+						ps.setLong(14, transactionDataSet.getGenericNumber2());
+					else
+						ps.setNull(14, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber3())
+						ps.setLong(15, transactionDataSet.getGenericNumber3());
+					else
+						ps.setNull(15, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber4())
+						ps.setLong(16, transactionDataSet.getGenericNumber4());
+					else
+						ps.setNull(16, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal1())
+						ps.setBigDecimal(17, transactionDataSet.getGenericDecimal1());
+					else
+						ps.setNull(17, Types.NUMERIC);
+					if (null != transactionDataSet.getGenericDecimal4())
+						ps.setBigDecimal(18, transactionDataSet.getGenericDecimal4());
+					else
+						ps.setNull(18, Types.NUMERIC);
+					if (null != transactionDataSet.getGenericDecimal5())
+						ps.setBigDecimal(19, transactionDataSet.getGenericDecimal5());
+					else
+						ps.setNull(19, Types.NUMERIC);
+					if (null != transactionDataSet.getGenericDecimal6())
+						ps.setBigDecimal(20, transactionDataSet.getGenericDecimal6());
+					else
+						ps.setNull(20, Types.NUMERIC);
+					if (null != transactionDataSet.getGenericDecimal7())
+						ps.setBigDecimal(21, transactionDataSet.getGenericDecimal7());
+					else
+						ps.setNull(21, Types.NUMERIC);
+					if (null != transactionDataSet.getGenericDecimal7())
+						ps.setDate(22, new java.sql.Date(transactionDataSet.getGenericDate1().getTime()));
+					else
+						ps.setNull(22, Types.DATE);
+					ps.setDate(23, new java.sql.Date(transactionDataSet.getGenericDate2().getTime()));
+					ps.setLong(24, transactionDataSet.getCompanyId());
+					ps.setString(25, transactionDataSet.getStatus());
+					ps.setString(26, transactionDataSet.getCreatedBy());
+					ps.setDate(27, new java.sql.Date(transactionDataSet.getCreatedDateTime().getTime()));
+					ps.setDate(28, new java.sql.Date(transactionDataSet.getRemoveDateTime().getTime()));
+					ps.setDate(29, new java.sql.Date(transactionDataSet.getValidFrom().getTime()));
+					ps.setDate(30, new java.sql.Date(transactionDataSet.getValidFrom().getTime()));
+				});
+	}
+
+	public void updateTransactions(List<TransactionDataSet> transactions) {
+		String sql = "update sc_transactionDataSet set firstName = ?,dateOfBirth = ?,gender = ?,"
+				+ "religion = ?,panCardNumber = ?,branchCode = ?,genericString2 = ?,"
+				+ "genericString4 = ?,genericString5 = ?,genericNumber1 = ?,genericNumber2 = ?,genericNumber3 = ?,genericNumber4 = ?,"
+				+ "genericDecimal1 = ?,genericDecimal4 = ?,genericDecimal5 = ?,genericDecimal6 = ?,genericDecimal7 = ?,"
+				+ "genericDate1 = ?,genericDate2 = ? where dataSetId = ?";
+		jdbcTemplate.batchUpdate(sql, transactions, 1000,
+				(PreparedStatement ps, TransactionDataSet transactionDataSet) -> {
+					ps.setString(1, transactionDataSet.getFirstName());
+					if (null != transactionDataSet.getDateOfBirth())
+						ps.setDate(2, new java.sql.Date(transactionDataSet.getDateOfBirth().getTime()));
+					else
+						ps.setNull(2,Types.DATE);
+					if(null != transactionDataSet.getGender())
+					ps.setLong(3, transactionDataSet.getGender());
+					else
+						ps.setNull(3,Types.BIGINT);
+					if (null != transactionDataSet.getReligion())
+						ps.setLong(4, transactionDataSet.getReligion());
+					else
+						ps.setNull(4, Types.BIGINT);
+					if (null != transactionDataSet.getPanCardNumber())
+						ps.setString(5, transactionDataSet.getPanCardNumber());
+					else
+						ps.setNull(5, Types.VARCHAR);
+					if (null != transactionDataSet.getBranchCode())
+						ps.setString(6, transactionDataSet.getBranchCode());
+					else
+						ps.setNull(6, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString2())
+						ps.setString(7, transactionDataSet.getGenericString2());
+					else
+						ps.setNull(7, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString4())
+						ps.setString(8, transactionDataSet.getGenericString4());
+					else
+						ps.setNull(8, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericString5())
+						ps.setString(9, transactionDataSet.getGenericString5());
+					else
+						ps.setNull(9, Types.VARCHAR);
+					if (null != transactionDataSet.getGenericNumber1())
+						ps.setLong(10, transactionDataSet.getGenericNumber1());
+					else
+						ps.setNull(10, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber2())
+						ps.setLong(11, transactionDataSet.getGenericNumber2());
+					else
+						ps.setNull(11, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber3())
+						ps.setLong(12, transactionDataSet.getGenericNumber3());
+					else
+						ps.setNull(12, Types.BIGINT);
+					if (null != transactionDataSet.getGenericNumber4())
+						ps.setLong(13, transactionDataSet.getGenericNumber4());
+					else
+						ps.setNull(13, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal1())
+						ps.setBigDecimal(14, transactionDataSet.getGenericDecimal1());
+					else
+						ps.setNull(14, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal4())
+						ps.setBigDecimal(15, transactionDataSet.getGenericDecimal4());
+					else
+						ps.setNull(15, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal5())
+						ps.setBigDecimal(16, transactionDataSet.getGenericDecimal5());
+					else
+						ps.setNull(16, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal6())
+						ps.setBigDecimal(17, transactionDataSet.getGenericDecimal6());
+					else
+						ps.setNull(17, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDecimal7())
+						ps.setBigDecimal(18, transactionDataSet.getGenericDecimal7());
+					else
+						ps.setNull(18, Types.BIGINT);
+					if (null != transactionDataSet.getGenericDate1())
+						ps.setDate(19, new java.sql.Date(transactionDataSet.getGenericDate1().getTime()));
+					else
+						ps.setNull(19, Types.DATE);
+					if (null != transactionDataSet.getGenericDate2())
+						ps.setDate(20, new java.sql.Date(transactionDataSet.getGenericDate2().getTime()));
+					else
+						ps.setNull(20, Types.DATE);
+					ps.setLong(21, transactionDataSet.getDataSetId());
+				});
+	}
 }

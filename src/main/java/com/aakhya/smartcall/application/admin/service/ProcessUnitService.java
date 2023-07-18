@@ -15,62 +15,55 @@ import com.aakhya.smartcall.application.admin.repository.ProcessUnitRepository;
 
 @Service
 public class ProcessUnitService {
-	
+
 	@Autowired
 	private ProcessUnitRepository processUnitRepository;
 	@Autowired
 	private SequenceService sequenceService;
-	
-	
-public List<ProcessUnit> findAllProcessUnits(){
+
+	public List<ProcessUnit> findAllProcessUnits() {
 		List<ProcessUnit> processUnits = processUnitRepository.findAll();
 		return processUnits;
 	}
 
-public List<ProcessUnit> findAllProcessUnits(String processUnitNameFilter){
-	List<ProcessUnit> processUnits = new ArrayList<ProcessUnit>();
-	if(null == processUnitNameFilter || processUnitNameFilter.isEmpty()) {
-		processUnits = processUnitRepository.findAll();
-	}else {
-		processUnits = processUnitRepository.search(processUnitNameFilter);
+	public List<ProcessUnit> findAllProcessUnits(String processUnitNameFilter) {
+		List<ProcessUnit> processUnits = new ArrayList<ProcessUnit>();
+		if (null == processUnitNameFilter || processUnitNameFilter.isEmpty()) {
+			processUnits = processUnitRepository.findAll();
+		} else {
+			processUnits = processUnitRepository.search(processUnitNameFilter);
+		}
+		return processUnits;
 	}
-	return processUnits;
-}
 
-
-
-public ProcessUnit findByPrimaryKey(ProcessUnitPK processUnitPK) {
-	Optional<ProcessUnit> op = processUnitRepository.findById(processUnitPK);
-	if(op.isPresent()) {
-		ProcessUnit pu = op.get();
-		return pu;
+	public ProcessUnit findByPrimaryKey(ProcessUnitPK processUnitPK) {
+		Optional<ProcessUnit> op = processUnitRepository.findById(processUnitPK);
+		if (op.isPresent()) {
+			ProcessUnit pu = op.get();
+			return pu;
+		} else {
+			return null;
+		}
 	}
-	else {
-		return null;
+
+	public void saveProcessUnit(ProcessUnit processUnit) {
+		if (null != processUnit) {
+			if (null == processUnit.getProcessingUnitid()) {
+				Long processUnitId = sequenceService.getNewSequence(EntityNameType.PROCESS_UNIT,
+						processUnit.getProcessingUnitid());
+				processUnit.setProcessingUnitid(processUnitId);
+				// processUnit.setCompanyId(1L);
+			}
+			processUnitRepository.save(processUnit);
+		}
 	}
-}
 
-
-public void saveProcessUnit(ProcessUnit processUnit) {
-	if(null!= processUnit) {
-		if(null==processUnit.getProcessingUnitid()) {
-			Long processUnitId = sequenceService.getNewSequence(EntityNameType.PROCESS_UNIT, processUnit.getProcessingUnitid());
-			processUnit.setProcessingUnitid(processUnitId);
-			//processUnit.setCompanyId(1L);
-		}		
-		processUnitRepository.save(processUnit);
-		}	
-}
-
-
-public void deleteProcessUnit(ProcessUnit processUnit) {
-	if(null!= processUnit) {
-		processUnit.setStatus(RecordStatusType.DELETED.getValue());
-		processUnitRepository.delete(processUnit);//for test purpose to delete
-		//processUnitRepository.save(processUnit);
-		}	
-}
-
-
+	public void deleteProcessUnit(ProcessUnit processUnit) {
+		if (null != processUnit) {
+			processUnit.setStatus(RecordStatusType.DELETED.getValue());
+			processUnitRepository.delete(processUnit);// for test purpose to delete
+			// processUnitRepository.save(processUnit);
+		}
+	}
 
 }

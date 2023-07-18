@@ -20,8 +20,8 @@ import org.apache.poi.ss.usermodel.FormulaEvaluator;
 import org.apache.poi.ss.usermodel.Row;
 
 import com.aakhya.smartcall.application.integration.entity.IntegrationMaster;
+import com.aakhya.smartcall.application.transaction.data.entity.TemporaryTransaction;
 import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
-import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataUploadEntity;
 import com.aakhya.smartcall.application.transaction.data.service.TransactionDataSetService;
 
 public class ExcelFileReader implements FileReader {
@@ -176,8 +176,8 @@ public class ExcelFileReader implements FileReader {
 		BufferedReader reader = new BufferedReader(inputStreamReader);
 		try {
 			int rowCount = 0;
-			Long updateCount = 0L;
-			Long createCount = 0L;
+//			Long updateCount = 0L;
+//			Long createCount = 0L;
 			while (reader.ready()) {
 				String line = reader.readLine();
 				if (rowCount > 0) {
@@ -249,10 +249,10 @@ public class ExcelFileReader implements FileReader {
 							try {
 								Long loanAccountNumber = Long.valueOf(loanAccountNumberStr);
 								dataSet.setGenericNumber2(loanAccountNumber);
-								if(service.checkIfLoanAccountNumberExisit(loanAccountNumber))
-									updateCount++;
-								else
-									createCount++;
+//								if(service.checkIfLoanAccountNumberExisit(loanAccountNumber))
+//									updateCount++;
+//								else
+//									createCount++;
 							} catch (Exception e) {
 								dataSet.setGenericNumber2(null);
 							}
@@ -352,4 +352,190 @@ public class ExcelFileReader implements FileReader {
 		return transactionDataSets;
 	}
 
+	public static List<TemporaryTransaction> processDilimitedFileNew(FileInputStream fis,
+			Long initialCount,TransactionDataSetService service) {
+//		TransactionDataUploadEntity transactionDataUpload = new TransactionDataUploadEntity();
+		List<TemporaryTransaction> temporaryTransactions = new ArrayList<TemporaryTransaction>();
+		InputStreamReader inputStreamReader = new InputStreamReader(fis);
+		BufferedReader reader = new BufferedReader(inputStreamReader);
+		try {
+			int rowCount = 0;
+//			Long updateCount = 0L;
+//			Long createCount = 0L;
+			while (reader.ready()) {
+				String line = reader.readLine();
+				if (rowCount > 0) {
+					TemporaryTransaction temporaryTransaction = new TemporaryTransaction();
+					String[] data = line.split("\\|");
+//					System.out.println(data.length);
+					if (data.length >= 25) {
+						String firstName = data[0];
+						if(null != firstName && firstName.replaceAll(" ","").length() > 0) {
+							temporaryTransaction.setFirstname(firstName);
+
+						String dateOfBirthStr = data[1];
+						try {
+							Date dateOfBirth = df.parse(dateOfBirthStr);
+							temporaryTransaction.setDob(dateOfBirth);
+						} catch (Exception e) {
+							temporaryTransaction.setDob(null);
+						}
+//
+						String genderStr = data[2];
+						if (null != genderStr && "M".equals(genderStr))
+							temporaryTransaction.setGender(405L);
+						else if (null != genderStr && "F".equals(genderStr))
+							temporaryTransaction.setGender(405L);
+//
+						String panCardNumber = data[8];
+						temporaryTransaction.setPancard(panCardNumber);
+//
+						String address = data[9];
+						temporaryTransaction.setAddress(address);
+//
+						String pincodeStr = data[10];
+						temporaryTransaction.setPincode(pincodeStr);
+//						if (null != pincodeStr && pincodeStr.replaceAll(" ", "").length() > 0) {
+//							try {
+//								Long pincode = Long.valueOf(pincodeStr.replaceAll(" ", "").replace("`",""));
+//								temporaryTransaction.setPincode(pincode);
+//							} catch (Exception e) {
+//								dataSet.setGenericNumber4(null);
+//							}
+//						}
+//
+						String branchCodeStr = data[12];
+						if (null != branchCodeStr)
+							System.out.println("branchCodeStr::"+branchCodeStr);
+						if (null != branchCodeStr && branchCodeStr.replaceAll(" ", "").length() > 0) {
+							String branchCode = "000" + branchCodeStr.replaceAll(" ", "");
+							if(branchCode.length() == 4)
+								branchCode = "0"+branchCode;
+							temporaryTransaction.setBranchcode(branchCode);
+						}
+//
+						String branchName = data[13];
+						temporaryTransaction.setBranchname(branchName);
+//
+						String product = data[15];
+						temporaryTransaction.setProduct(product);
+//
+						String mobileNumberStr = data[16];
+						temporaryTransaction.setMobilenumber(mobileNumberStr);
+//						if (null != mobileNumberStr && mobileNumberStr.replaceAll(" ", "").length() > 0) {
+//							try {
+//								Long mobileNumber = Long.valueOf(mobileNumberStr);
+//								dataSet.setGenericNumber1(mobileNumber);
+//							} catch (Exception e) {
+//								dataSet.setGenericNumber1(null);
+//							}
+//						}
+						String loanAccountNumberStr = data[17];
+						temporaryTransaction.setLoanaccountnumber(loanAccountNumberStr);
+//						if (null != loanAccountNumberStr && loanAccountNumberStr.replaceAll(" ", "").length() > 0) {
+//							try {
+//								Long loanAccountNumber = Long.valueOf(loanAccountNumberStr);
+//								dataSet.setGenericNumber2(loanAccountNumber);
+////								if(service.checkIfLoanAccountNumberExisit(loanAccountNumber))
+////									updateCount++;
+////								else
+////									createCount++;
+//							} catch (Exception e) {
+//								dataSet.setGenericNumber2(null);
+//							}
+//						}
+						String dpdQueueStr = data[18];
+						if(null != dpdQueueStr)
+							System.out.println("dpdQueueStr::"+dpdQueueStr);
+						if (null != dpdQueueStr && dpdQueueStr.replaceAll(" ", "").length() > 0) {
+							if ("00".equals(dpdQueueStr) || "01".equals(dpdQueueStr))
+								temporaryTransaction.setDpdqueue(3738L);
+							else if ("02".equals(dpdQueueStr))
+								temporaryTransaction.setDpdqueue(3739L);
+							else if ("03".equals(dpdQueueStr))
+								temporaryTransaction.setDpdqueue(3740L);
+							else
+								temporaryTransaction.setDpdqueue(3750L);
+						}else
+							temporaryTransaction.setDpdqueue(3738L);
+
+						String currentBalanceStr = data[19];
+						if (null != currentBalanceStr && currentBalanceStr.replaceAll(" ", "").length() > 0) {
+							try {
+								BigDecimal currentBalance = new BigDecimal(currentBalanceStr);
+								temporaryTransaction.setCurrentoutstandingbalance(currentBalance);
+//								dataSet.setGenericDecimal6(currentBalance);
+							} catch (Exception e) {
+								temporaryTransaction.setCurrentoutstandingbalance(null);
+//								dataSet.setGenericDecimal6(null);
+							}
+						}
+						String interestDueStr = data[21];
+						if (null != interestDueStr && interestDueStr.replaceAll(" ", "").length() > 0) {
+							try {
+								BigDecimal interestDue = new BigDecimal(interestDueStr);
+								temporaryTransaction.setInterestdue(interestDue);
+							} catch (Exception e) {
+								temporaryTransaction.setInterestdue(null);
+							}
+						}
+						String interestRateStr = data[22];
+						if (null != interestDueStr && interestDueStr.replaceAll(" ", "").length() > 0) {
+							try {
+								BigDecimal interestRate = new BigDecimal(interestRateStr);
+								temporaryTransaction.setInterestrate(interestRate);
+							} catch (Exception e) {
+								temporaryTransaction.setInterestrate(null);
+							}
+						}
+						String npaDateStr = data[24];
+						if (null != interestDueStr && interestDueStr.replaceAll(" ", "").length() > 0) {
+							try {
+								Date npaDate = df.parse(npaDateStr);
+								temporaryTransaction.setNpadate(npaDate);
+//								dataSet.setGenericDate2(npaDate);
+							} catch (Exception e) {
+								Calendar cal = Calendar.getInstance();
+							    cal.add(Calendar.MONTH, -1);
+							    cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+							    Date npaDate = cal.getTime();
+							    temporaryTransaction.setNpadate(npaDate);
+//								dataSet.setGenericDate2(npaDate);
+							}
+						}else {
+							Calendar cal = Calendar.getInstance();
+						    cal.add(Calendar.MONTH, -1);
+						    cal.set(Calendar.DAY_OF_MONTH, cal.getActualMaximum(Calendar.DAY_OF_MONTH));
+						    Date npaDate = cal.getTime();
+						    temporaryTransaction.setNpadate(npaDate);
+//							dataSet.setGenericDate2(npaDate);
+						}
+						temporaryTransactions.add(temporaryTransaction);
+					}
+				}
+				}
+				rowCount++;
+			}
+//			transactionDataUpload.setUploadedData(transactionDataSets);
+//			transactionDataUpload.setInitialCount(initialCount);
+//			transactionDataUpload.setCreateCount(createCount);
+//			transactionDataUpload.setUpdateCount(updateCount);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+//		} catch (ParseException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+		} catch(Exception e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				fis.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+		return temporaryTransactions;
+	}
 }

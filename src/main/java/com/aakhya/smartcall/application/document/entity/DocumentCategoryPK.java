@@ -100,7 +100,5 @@ public class DocumentCategoryPK implements Serializable {
 
 	public void setCompanyId(Long companyId) {
 		this.companyId = companyId;
-	}
-	
-	
+	}	
 }

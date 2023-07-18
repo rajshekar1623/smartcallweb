@@ -17,60 +17,58 @@ import com.aakhya.smartcall.application.admin.repository.BusinessUnitRepository;
 @Service
 public class BusinessUnitService {
 
-	
 	@Autowired
 	private BusinessUnitRepository businessUnitRepository;
 	@Autowired
 	private SequenceService sequenceService;
-	
-public List<BusinessUnit> findAllBusinessUnits(){
+
+	public List<BusinessUnit> findAllBusinessUnits() {
 		List<BusinessUnit> businessUnits = businessUnitRepository.findAll();
 		return businessUnits;
+	}
+
+	public List<BusinessUnit> findAllBusinessUnits(String businessUnitNameFilter) {
+		List<BusinessUnit> businessUnits = new ArrayList<BusinessUnit>();
+		if (null == businessUnitNameFilter || businessUnitNameFilter.isEmpty()) {
+			businessUnits = businessUnitRepository.findAll();
+		} else {
+			businessUnits = businessUnitRepository.search(businessUnitNameFilter);
 		}
-
-public List<BusinessUnit> findAllBusinessUnits(String businessUnitNameFilter){
-	List<BusinessUnit> businessUnits = new ArrayList<BusinessUnit>();
-	if(null == businessUnitNameFilter || businessUnitNameFilter.isEmpty()) {
-		businessUnits = businessUnitRepository.findAll();
-	}else {
-		businessUnits = businessUnitRepository.search(businessUnitNameFilter);
+		return businessUnits;
 	}
-	return businessUnits;
-}
 
-public BusinessUnit findByPrimaryKey(BusinessUnitPK businessUnitPK) {
-	Optional<BusinessUnit> op = businessUnitRepository.findById(businessUnitPK);
-	if(op.isPresent()) {
-		BusinessUnit bu = op.get();
-		return bu;
+	public BusinessUnit findByPrimaryKey(BusinessUnitPK businessUnitPK) {
+		Optional<BusinessUnit> op = businessUnitRepository.findById(businessUnitPK);
+		if (op.isPresent()) {
+			BusinessUnit bu = op.get();
+			return bu;
+		} else {
+			return null;
+		}
 	}
-	else {
-		return null;
-	}
-}
 
-
-public void saveBusinessUnit(BusinessUnit businessUnit) {
-	if(null!= businessUnit) {
-		if(null == businessUnit.getBusinessUnitId()) {
-			Long businessUnitId = sequenceService.getNewSequence(EntityNameType.BUSINESS_UNIT, businessUnit.getCompanyId());
-			businessUnit.setBusinessUnitId(businessUnitId);
-			if(null != businessUnit.getBusinessProcessUnits() && !businessUnit.getBusinessProcessUnits().isEmpty()) {
-				for(BusinessProcessUnit businessProcessUnit:businessUnit.getBusinessProcessUnits()) {
-					businessProcessUnit.setBusinessUnit(businessUnit);
+	public void saveBusinessUnit(BusinessUnit businessUnit) {
+		if (null != businessUnit) {
+			if (null == businessUnit.getBusinessUnitId()) {
+				Long businessUnitId = sequenceService.getNewSequence(EntityNameType.BUSINESS_UNIT,
+						businessUnit.getCompanyId());
+				businessUnit.setBusinessUnitId(businessUnitId);
+				if (null != businessUnit.getBusinessProcessUnits()
+						&& !businessUnit.getBusinessProcessUnits().isEmpty()) {
+					for (BusinessProcessUnit businessProcessUnit : businessUnit.getBusinessProcessUnits()) {
+						businessProcessUnit.setBusinessUnit(businessUnit);
+					}
 				}
 			}
+			businessUnitRepository.save(businessUnit);
 		}
-		businessUnitRepository.save(businessUnit);
-		}
-}
-
-public void deleteBusinessUnit(BusinessUnit businessUnit) {
-	if(null!=businessUnit) {
-		businessUnit.setStatus(RecordStatusType.DELETED.getValue());
-		businessUnitRepository.delete(businessUnit);
 	}
-}
 
-	
+	public void deleteBusinessUnit(BusinessUnit businessUnit) {
+		if (null != businessUnit) {
+			businessUnit.setStatus(RecordStatusType.DELETED.getValue());
+			businessUnitRepository.delete(businessUnit);
+		}
+	}
+
 }

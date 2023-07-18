@@ -8,7 +8,8 @@ public enum EntityNameType {
 	TRANS_DATA_SET("sc_transactiondataset"),
 	ACTIVITY("sc_activity"),
 	BUSINESS_UNIT("sc_businessunit"),
-	PROCESS_UNIT("sc_processingunit");
+	PROCESS_UNIT("sc_processingunit"),
+	MESSAGE_TEMPLATE("sc_messagetemplate");
 
 	private String value;
 
