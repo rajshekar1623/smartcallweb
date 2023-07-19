@@ -16,7 +16,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.aakhya.smartcall.application.transaction.activity.entity.ActivityFromUI;
+import com.aakhya.smartcall.application.transaction.activity.entity.ActivityNote;
 import com.aakhya.smartcall.application.transaction.activity.entity.ActivityWithDetail;
+import com.aakhya.smartcall.application.transaction.activity.entity.ScheduleForTheDay;
+import com.aakhya.smartcall.application.transaction.activity.entity.ScheduledVistit;
 
 @Repository
 public class ActivityJdbcRepository {
@@ -179,5 +182,196 @@ public class ActivityJdbcRepository {
 			}
 		});
 		return activities;
+	}
+	
+	/**
+	 * 
+	 */
+	
+	public List<ScheduledVistit> findScheduledVisits(String userId){
+		List<ScheduledVistit> scheduledVisits = new ArrayList<ScheduledVistit>();
+		StringBuffer query = new StringBuffer();
+		query.append("select a.dataSetId,dbo.fn_getName(a.dataSetId) memberName,case a.dataSetType when 1 then 'Marketing' when 2 then 'NPA'");
+		query.append(" when 3 then 'Welcome Call' end queue,d.scheduleDateTime,dbo.fn_getGenericClassifier(a.village,7) village  from sc_transactionDataset a join sc_activity c ");
+		query.append(" on(a.dataSetId = c.dataSetId) join sc_activityDetail d on(c.activityId = d.activityId) ");
+		query.append(" where c.activityType = 1004 and d.scheduleType = 'VISIT' and (convert(varchar,d.scheduleDateTime,105) = convert(varchar,getDate(),105) or d.scheduleDateTime > getDate())  and c.userId = :userId order by d.scheduleDateTime");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("userId", userId);
+		scheduledVisits = namedParameterJdbcTemplate.query(query.toString(), params,new RowMapper<ScheduledVistit>() {
+
+			@Override
+			public ScheduledVistit mapRow(ResultSet rs, int rowNum) throws SQLException {
+				ScheduledVistit scheduledVisit = new ScheduledVistit();
+				scheduledVisit.setDataSetId(rs.getLong("dataSetId"));
+				Date scheduledDateTime = rs.getTimestamp("scheduleDateTime");
+				System.out.println(scheduledDateTime);
+				if(null != scheduledDateTime) {
+					String date = new SimpleDateFormat("dd-MMM-yyyy").format(scheduledDateTime);
+					String time = new SimpleDateFormat("hh:mm a").format(scheduledDateTime);
+					scheduledVisit.setScheduledDate(date);
+					scheduledVisit.setScheduledTime(time);
+				}
+				scheduledVisit.setMemberName(rs.getString("memberName"));
+				scheduledVisit.setQueue(rs.getString("queue"));
+				scheduledVisit.setVillageName(rs.getString("village"));
+				return scheduledVisit;
+			}
+		});
+		return scheduledVisits;
+	}
+	
+	public List<ScheduledVistit> findScheduledVisits(String userId,Date fromDate,Date toDate){
+		List<ScheduledVistit> scheduledVisits = new ArrayList<ScheduledVistit>();
+		StringBuffer query = new StringBuffer();
+		query.append("select a.dataSetId,dbo.fn_getName(a.dataSetId) memberName,case a.dataSetType when 1 then 'Marketing' when 2 then 'NPA'");
+		query.append(" when 3 then 'Welcome Call' end queue,d.scheduleDateTime,dbo.fn_getGenericClassifier(a.village,7) village  from sc_transactionDataset a join sc_activity c ");
+		query.append(" on(a.dataSetId = c.dataSetId) join sc_activityDetail d on(c.activityId = d.activityId) ");
+		query.append(" where c.activityType = 1004 and d.scheduleType = 'VISIT' and d.scheduleDateTime  between :fromDate and :toDate  and c.userId = :userId order by d.scheduleDateTime");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("userId", userId);
+		params.put("fromDate", fromDate);
+		params.put("toDate", toDate);
+		scheduledVisits = namedParameterJdbcTemplate.query(query.toString(), params,new RowMapper<ScheduledVistit>() {
+
+			@Override
+			public ScheduledVistit mapRow(ResultSet rs, int rowNum) throws SQLException {
+				ScheduledVistit scheduledVisit = new ScheduledVistit();
+				scheduledVisit.setDataSetId(rs.getLong("dataSetId"));
+				Date scheduledDateTime = rs.getTimestamp("scheduleDateTime");
+				if(null != scheduledDateTime) {
+					String date = new SimpleDateFormat("dd-MMM-yyyy").format(scheduledDateTime);
+					String time = new SimpleDateFormat("hh:mm a").format(scheduledDateTime);
+					scheduledVisit.setScheduledDate(date);
+					scheduledVisit.setScheduledTime(time);
+				}
+				scheduledVisit.setMemberName(rs.getString("memberName"));
+				scheduledVisit.setQueue(rs.getString("queue"));
+				scheduledVisit.setVillageName(rs.getString("village"));
+				return scheduledVisit;
+			}
+		});
+		return scheduledVisits;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<ScheduleForTheDay> getScheduleForTheDay(String userId) {
+		List<ScheduleForTheDay> schedulesForTheDay = new ArrayList<ScheduleForTheDay>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select 'Call' queue,count(distinct a.dataSetId) pendingCnt,count(distinct b.dataSetId) completeCnt,usr.userId ");
+		query.append(" from sc_user usr left outer join (select a.datasetId,a.activityId,a.userId from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 and b.scheduleType = 'CALL'  ");
+		query.append(" and convert(varchar,b.scheduleDateTime,105)  = convert(varchar,getDate(),105) and a.activityStatus = 'PENDING' ) ");
+		query.append(" ) A on (usr.userId = A.userId) left outer join (select a.datasetId,a.activityId,a.userId from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 and b.scheduleType = 'CALL'  ");
+		query.append(" and convert(varchar,b.scheduleDateTime,105)  = convert(varchar,getDate(),105) and a.activityStatus = 'COMPLETE' ) ");
+		query.append(" ) B on (usr.userId = B.userId) where usr.userid = :userId group by usr.userid ");
+		query.append(" union ");
+		query.append(" select 'Visit' queue,count(distinct a.dataSetId) pendingCnt,count(distinct b.dataSetId) completeCnt,usr.userId  ");
+		query.append(" from sc_user usr left outer join (select a.datasetId,a.activityId,a.userId from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 and b.scheduleType = 'VISIT'  ");
+		query.append(" and convert(varchar,b.scheduleDateTime,105)  = convert(varchar,getDate(),105) and a.activityStatus = 'PENDING' ) ");
+		query.append(" ) A on (usr.userId = A.userId) left outer join (select a.datasetId,a.activityId,a.userId from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 and b.scheduleType = 'VISIT'  ");
+		query.append(" and convert(varchar,b.scheduleDateTime,105)  = convert(varchar,getDate(),105) and a.activityStatus = 'COMPLETE' ) ");
+		query.append(" ) B on (usr.userId = B.userId) where usr.userid = :userId group by usr.userid ");
+//		System.out.println("***** the query being executed is :: "+query.toString().replaceAll(":userId", "'CA_01_001'"));
+		Map<String, Object> params = new HashMap<String,Object>();
+		params.put("userId", userId);
+		schedulesForTheDay = namedParameterJdbcTemplate.query(query.toString(), params, new RowMapper() {
+
+			@Override
+			public ScheduleForTheDay mapRow(ResultSet rs, int rowNum) throws SQLException {
+				ScheduleForTheDay scheduleForTheDay = new ScheduleForTheDay();
+				scheduleForTheDay.setQueue(rs.getString("queue"));
+				scheduleForTheDay.setPending(rs.getInt("pendingCnt"));
+				scheduleForTheDay.setComplete(rs.getInt("completeCnt"));
+				return scheduleForTheDay;
+			}
+		});
+		return schedulesForTheDay;
+	}
+	
+	public List<ActivityFromUI> getCallsForTheDay(String userId) {
+		List<ActivityFromUI> callsForTheDay = new ArrayList<ActivityFromUI>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select a.activityId,a.companyId,a.activityType,a.activityDescription,");
+		query.append(" a.activityDateTime,a.dataSetId,a.parentActivity,a.branchCode,a.userId,");
+		query.append(" b.attemptSequence,b.attemptDateTime,b.attemptDuration,b.attemptStatus,");
+		query.append(" b.attemptFlow,b.attemptNotes,b.scheduleType,b.scheduleDateTime,a.status ");
+		query.append(" from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 ");
+		query.append(" and b.scheduleType = 'CALL' and convert(varchar,b.scheduleDateTime,105) ");
+		query.append(" = convert(varchar,getDate(),105) and a.activityStatus = 'PENDING' ) ");
+		Map<String, Object> params = new HashMap<String,Object>();
+		params.put("userId", userId);
+		callsForTheDay = namedParameterJdbcTemplate.query(query.toString(), params, new ActivityFromUIRowMapper());
+		return callsForTheDay;
+	}
+	
+	public List<ActivityFromUI> getVisitsForTheDay(String userId) {
+		List<ActivityFromUI> callsForTheDay = new ArrayList<ActivityFromUI>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select a.activityId,a.companyId,a.activityType,a.activityDescription,");
+		query.append(" a.activityDateTime,a.dataSetId,a.parentActivity,a.branchCode,a.userId,");
+		query.append(" b.attemptSequence,b.attemptDateTime,b.attemptDuration,b.attemptStatus,");
+		query.append(" b.attemptFlow,b.attemptNotes,b.scheduleType,b.scheduleDateTime,a.status ");
+		query.append(" from sc_activity a join sc_activityDetail b ");
+		query.append(" on(a.activityId = b.activityId and a.activityType = 1004 ");
+		query.append(" and b.scheduleType = 'VISIT' and convert(varchar,b.scheduleDateTime,105) ");
+		query.append(" = convert(varchar,getDate(),105) and a.activityStatus = 'PENDING' ) ");
+		Map<String, Object> params = new HashMap<String,Object>();
+		params.put("userId", userId);
+		callsForTheDay = namedParameterJdbcTemplate.query(query.toString(), params, new ActivityFromUIRowMapper());
+		return callsForTheDay;
+	}
+	
+//	public List<Activity> findActivitiesForDataSet(Long dataSetId,Date fromDate,Date toDate){
+//		StringBuffer query = new StringBuffer();
+//		query.append(" select a.activityId,a.companyId,a.activityType,a.activityDescription,");
+//		query.append(" a.dataSetId,a.parentActivity,");
+//		rivate Long ;
+//		private Long ;
+//		private Long ;
+//		private String ;
+//		private String activityDate;
+//		private String activityTime;
+//		private String day;
+//		private Long ;
+//		private Long ;
+//		private String branchCode;
+//		private String userId;
+//		private String userName;
+//		private String activityStatus;
+//		return null;
+//	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<ActivityNote> getNotesHistory(Long dataSetId){
+		List<ActivityNote> activityNotes = new ArrayList<ActivityNote>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select usr.userName,act.activityDateTime,det.attemptNotes,act.activityDescription ");
+		query.append(" from sc_activity act join sc_activityDetail det on(act.activityId = det.activityId ");
+		query.append(" and dataSetId = :dataSetId) join sc_user usr on(act.createdBy = usr.userid) ");
+		Map<String,Object> param = new HashMap<String, Object>();
+		param.put("dataSetId",dataSetId);
+		activityNotes = namedParameterJdbcTemplate.query(query.toString(), param, new RowMapper() {
+
+			@Override
+			public ActivityNote mapRow(ResultSet rs, int rowNum) throws SQLException {
+				ActivityNote activityNote = new ActivityNote();
+				activityNote.setUserName(rs.getString("userName"));
+				activityNote.setNotes(rs.getString("attemptNotes"));
+				Date activityDateTime = rs.getTimestamp("activityDateTime");
+				if(null != activityDateTime) {
+					String activityDate = new SimpleDateFormat("dd-MM-yyyy").format(activityDateTime);
+					String activityTime = new SimpleDateFormat("hh:mm a").format(activityDateTime);
+					activityNote.setDate(activityDate);
+					activityNote.setTime(activityTime);
+				}
+				activityNote.setActivityType(rs.getString("activityDescription"));
+				return activityNote;
+			}
+		});
+		return activityNotes;
 	}
 }

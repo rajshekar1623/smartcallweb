@@ -1,18 +1,35 @@
 package com.aakhya.smartcall.application.transaction.data.repository;
 
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
+import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
+import com.aakhyatech.smartcall.application.utils.StringUtils;
+import com.aakhya.smartcall.application.transaction.data.entity.DetailViewConfig;
+import com.aakhya.smartcall.application.transaction.data.entity.DetailViewObject;
+import com.aakhya.smartcall.application.transaction.data.entity.DpdQueue;
+import com.aakhya.smartcall.application.transaction.data.entity.DpdQueueList;
 
 @Repository
 public class TransactionDataSetJdbcRepository {
@@ -122,7 +139,7 @@ public class TransactionDataSetJdbcRepository {
 //			query.append(" and dataSetType = :queue");
 //			paramMap.put("queue", queue);
 //		}
-		if(null != dpdQueue && !dpdQueue.equals(0L)) {
+		if (null != dpdQueue && !dpdQueue.equals(0L)) {
 			query.append(" and genericNumber3 = :dpdQueue");
 			paramMap.put("dpdQueue", dpdQueue);
 		}
@@ -365,11 +382,11 @@ public class TransactionDataSetJdbcRepository {
 					if (null != transactionDataSet.getDateOfBirth())
 						ps.setDate(2, new java.sql.Date(transactionDataSet.getDateOfBirth().getTime()));
 					else
-						ps.setNull(2,Types.DATE);
-					if(null != transactionDataSet.getGender())
-					ps.setLong(3, transactionDataSet.getGender());
+						ps.setNull(2, Types.DATE);
+					if (null != transactionDataSet.getGender())
+						ps.setLong(3, transactionDataSet.getGender());
 					else
-						ps.setNull(3,Types.BIGINT);
+						ps.setNull(3, Types.BIGINT);
 					if (null != transactionDataSet.getReligion())
 						ps.setLong(4, transactionDataSet.getReligion());
 					else
@@ -440,5 +457,371 @@ public class TransactionDataSetJdbcRepository {
 						ps.setNull(20, Types.DATE);
 					ps.setLong(21, transactionDataSet.getDataSetId());
 				});
+	}
+	
+	/**
+	 * The following methods are for Mobile App backend services
+	 */
+	
+	public DpdQueue getDpDQueue(String userId,String branchCode, Long queue) {
+		DpdQueue dpdQueue = new DpdQueue();
+		if (null != queue && queue.equals(3738L))
+			dpdQueue.setDpdQueueName("1-30 days");
+		else if (null != queue && queue.equals(3739L))
+			dpdQueue.setDpdQueueName("31-60 days");
+		else if (null != queue && queue.equals(3740L))
+			dpdQueue.setDpdQueueName("60-90 days");
+		else if (null != queue && queue.equals(3750L))
+			dpdQueue.setDpdQueueName("Above 90 days");
+		else if (null != queue && queue.equals(3741L))
+			dpdQueue.setDpdQueueName("Renewal Queue");
+		else if (null != queue && queue.equals(3742L))
+			dpdQueue.setDpdQueueName("Renewal Followup");
+		Integer pendingCountForQueue = getDpdQueueCount(userId,branchCode, queue, "PENDING");
+		Integer completedCountForQueue = getDpdQueueCount(userId,branchCode, queue, "COMPLETE");
+		Integer inprocessCountForQueue = getDpdQueueCount(userId,branchCode, queue, "IN-PROCESS");
+		Integer noOfMembers = pendingCountForQueue + completedCountForQueue;
+		dpdQueue.setNoOfMembers(noOfMembers);
+		dpdQueue.setCompleted(completedCountForQueue);
+		dpdQueue.setPending(pendingCountForQueue);
+		dpdQueue.setInprocess(inprocessCountForQueue);
+		return dpdQueue;
+	}
+
+	private Integer getDpdQueueCount(String userId,String branchCode, Long queue, String actionStatus) {
+//		String query = "select count(1) from sc_transactionDataSet where branchCode = :branchCode and genericNumber3 = :queue and actionStatus = :actionStatus";
+		String query = null;
+		if("PENDING".equals(actionStatus)) {
+		query = "select count(1) from sc_transactionDataSet trx join sc_activity act "
+				+ " on(trx.dataSetId = act.dataSetId and act.userId = :userId and trx.genericNumber3 = :queue "
+				+ " and trx.dataSetType = 2 and act.activityType = 1001 and act.activityStatus in ('PENDING','RE-ASSIGNED'))";
+		}else {
+			query = "select count(1) from sc_transactionDataSet trx join sc_activity act "
+					+ " on(trx.dataSetId = act.dataSetId and act.userId = :userId and trx.genericNumber3 = :queue "
+					+ " and trx.dataSetType = 2 and act.activityType = 1001 and act.activityStatus = :actionStatus)";
+		}
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("userId", userId);
+		params.put("branchCode", branchCode);
+		params.put("queue", queue);
+		params.put("actionStatus", actionStatus);
+		Integer count = namedParameterJdbcTemplate.queryForObject(query, params, Integer.class);
+		return count;
+	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DpdQueueList> getDpdQueueList(String userId,String branchCode, Long queue) {
+		List<DpdQueueList> dpdQueueLists = new ArrayList<DpdQueueList>();
+		StringBuffer query = new StringBuffer();
+//		query.append("select top 100 dataSetId,case when firstName is not null then firstName else '' end +' '+");
+//		query.append("case when middleName is not null then middleName else '' end+' '+");
+//		query.append("case when LastName is not null then lastName else '' end as memberName,");
+//		query.append("dbo.fn_getGenericClassifier(village,7) as location ");
+//		query.append("from sc_transactionDataSet where branchCode = :branchCode and genericNumber3 = :queue");
+		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, ");
+		query.append(" dbo.fn_getGenericClassifier(village,7) as location, ");
+		query.append(" trn.genericNumber1,trn.genericNumber4,trn.genericDecimal10,trn.genericDecimal11,trn.genericDecimal12,");
+//		query.append(" case when dbo.fn_checkActivityStatus(trn.dataSetId,'COMPLETE') = 'Y' then 'Complete'  ");
+//		query.append(" when dbo.fn_checkActivityStatus(trn.dataSetId,'INPROCESS') = 'Y' then 'In Process' ");
+//		query.append(" when dbo.fn_checkActivityStatus(trn.dataSetId,'PENDING') = 'Y' then 'Pending' end ");
+		query.append(" activityStatus actionStatus from sc_transactionDataSet trn join sc_activity act  ");
+		query.append(" on(trn.dataSetId = act.dataSetId and trn.dataSetType = 2 and activityType = 1001 ");
+		query.append(" and trn.genericNumber3 = :queue and act.userId = :userId) ");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("branchCode", branchCode);
+		params.put("userId", userId);
+		params.put("queue", queue);
+		dpdQueueLists = namedParameterJdbcTemplate.query(query.toString(), params, new RowMapper() {
+
+			@Override
+			public DpdQueueList mapRow(ResultSet rs, int rowNum) throws SQLException {
+				DpdQueueList dpdQueueList = new DpdQueueList();
+				dpdQueueList.setDataSetId(rs.getLong("dataSetId"));
+				dpdQueueList.setMemberName(rs.getString("memberName"));
+				dpdQueueList.setLocation(rs.getString("location"));
+				dpdQueueList.setActionStatus(rs.getString("actionStatus"));
+				dpdQueueList.setMobileNumber(rs.getString("genericNumber1"));
+				dpdQueueList.setPinCode(rs.getString("genericNumber4"));
+				dpdQueueList.setLattitute(rs.getDouble("genericDecimal10"));
+				dpdQueueList.setLongitute(rs.getDouble("genericDecimal11"));
+				dpdQueueList.setDistance(rs.getDouble("genericDecimal12"));
+				return dpdQueueList;
+			}
+		});
+		return dpdQueueLists;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DpdQueueList> getVisitList(String userId,String branchCode) {
+		List<DpdQueueList> dpdQueueLists = new ArrayList<DpdQueueList>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, ");
+		query.append(" dbo.fn_getGenericClassifier(village,7) as location, ");
+		query.append(" activityStatus actionStatus,scheduleDateTime,trn.genericNumber1,trn.genericNumber4, "); 
+		query.append(" trn.genericDecimal10,trn.genericDecimal11,trn.genericDecimal12 ");
+		query.append(" from sc_transactionDataSet trn join sc_activity act  ");
+		query.append(" on(trn.dataSetId = act.dataSetId and trn.dataSetType = 2 and activityType = 1004 ");
+		query.append(" and act.userId = :userId  and activityStatus = 'PENDING') ");
+		query.append(" join sc_activityDetail det on(act.activityId = det.activityId and det.scheduleType = 'VISIT' ");
+		query.append(" and convert(varchar,det.scheduleDateTime,105) = convert(varchar,getDate(),105))");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("branchCode", branchCode);
+		params.put("userId", userId);
+		dpdQueueLists = namedParameterJdbcTemplate.query(query.toString(), params, new RowMapper() {
+
+			@Override
+			public DpdQueueList mapRow(ResultSet rs, int rowNum) throws SQLException {
+				DpdQueueList dpdQueueList = new DpdQueueList();
+				dpdQueueList.setDataSetId(rs.getLong("dataSetId"));
+				dpdQueueList.setMemberName(rs.getString("memberName"));
+				dpdQueueList.setLocation(rs.getString("location"));
+				dpdQueueList.setActionStatus(rs.getString("actionStatus"));
+				Date scheduleDateTime = rs.getTimestamp("scheduleDateTime");
+				if(null != scheduleDateTime) {
+					String scheduleDateTimeStr = new SimpleDateFormat("dd-MM-yyyy hh:mm a").
+							format(scheduleDateTime);
+					dpdQueueList.setScheduleDateTime(scheduleDateTimeStr);
+				}
+				dpdQueueList.setMobileNumber(rs.getString("genericNumber1"));
+				dpdQueueList.setPinCode(rs.getString("genericNumber4"));
+				dpdQueueList.setLattitute(rs.getDouble("genericDecimal10"));
+				dpdQueueList.setLongitute(rs.getDouble("genericDecimal11"));
+				dpdQueueList.setDistance(rs.getDouble("genericDecimal12"));
+				return dpdQueueList;
+			}
+		});
+		
+		return dpdQueueLists;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DpdQueueList> getCallList(String userId,String branchCode) {
+		List<DpdQueueList> dpdQueueLists = new ArrayList<DpdQueueList>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, ");
+		query.append(" dbo.fn_getGenericClassifier(village,7) as location, ");
+		query.append(" activityStatus actionStatus,scheduleDateTime,trn.genericNumber1,trn.genericNumber4, "); 
+		query.append(" trn.genericDecimal10,trn.genericDecimal11,trn.genericDecimal12 ");
+		query.append(" from sc_transactionDataSet trn join sc_activity act  ");
+		query.append(" on(trn.dataSetId = act.dataSetId and trn.dataSetType = 2 and activityType = 1004 ");
+		query.append(" and act.userId = :userId and activityStatus = 'PENDING') ");
+		query.append(" join sc_activityDetail det on(act.activityId = det.activityId and det.scheduleType = 'CALL' ");
+		query.append(" and convert(varchar,det.scheduleDateTime,105) = convert(varchar,getDate(),105))");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("branchCode", branchCode);
+		params.put("userId", userId);
+		dpdQueueLists = namedParameterJdbcTemplate.query(query.toString(), params, new RowMapper() {
+
+			@Override
+			public DpdQueueList mapRow(ResultSet rs, int rowNum) throws SQLException {
+				DpdQueueList dpdQueueList = new DpdQueueList();
+				dpdQueueList.setDataSetId(rs.getLong("dataSetId"));
+				dpdQueueList.setMemberName(rs.getString("memberName"));
+				dpdQueueList.setLocation(rs.getString("location"));
+				dpdQueueList.setActionStatus(rs.getString("actionStatus"));
+				Date scheduleDateTime = rs.getTimestamp("scheduleDateTime");
+				if(null != scheduleDateTime) {
+					String scheduleDateTimeStr = new SimpleDateFormat("dd-MM-yyyy hh:mm a").
+							format(scheduleDateTime);
+					dpdQueueList.setScheduleDateTime(scheduleDateTimeStr);
+				}
+				dpdQueueList.setMobileNumber(rs.getString("genericNumber1"));
+				dpdQueueList.setPinCode(rs.getString("genericNumber4"));
+				dpdQueueList.setLattitute(rs.getDouble("genericDecimal10"));
+				dpdQueueList.setLongitute(rs.getDouble("genericDecimal11"));
+				dpdQueueList.setDistance(rs.getDouble("genericDecimal12"));
+				return dpdQueueList;
+			}
+		});
+		
+		return dpdQueueLists;
+	}
+
+	@SuppressWarnings("unused")
+	private double distance(double lat1, double lon1, double lat2, double lon2, String unit) {
+		double theta = lon1 - lon2;
+		double dist = Math.sin(deg2rad(lat1)) * Math.sin(deg2rad(lat2))
+				+ Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) * Math.cos(deg2rad(theta));
+		dist = Math.acos(dist);
+		dist = rad2deg(dist);
+		dist = dist * 60 * 1.1515;
+		if (unit == "K") {
+			dist = dist * 1.609344;
+		} else if (unit == "N") {
+			dist = dist * 0.8684;
+		}
+		return (dist);
+	}
+
+	/* ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: */
+	/* :: This function converts decimal degrees to radians : */
+	/* ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: */
+	private double deg2rad(double deg) {
+		return (deg * Math.PI / 180.0);
+	}
+
+	/* ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: */
+	/* :: This function converts radians to decimal degrees : */
+	/* ::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::::: */
+	private double rad2deg(double rad) {
+		return (rad * 180.0 / Math.PI);
+	}
+
+//	private int generateRandomNumber(int min, int max) {
+//		return (int) (Math.random() * (max - min + 1) + min);
+//	}
+
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DetailViewObject> getDetailView(TransactionDataSet transactionDataSet, Long queue) {
+		List<DetailViewObject> detailViewObjects = new ArrayList<DetailViewObject>();
+		StringBuffer query = new StringBuffer();
+		query.append("select queue,sequence,fieldName,fieldLable,columFunction,editable");
+		query.append(" ,editDataType,button,buttonLable,buttonAction from sc_configDetails where queue = :queue");
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("queue", queue);
+		try {
+			List<DetailViewConfig> detailViewConfigs = namedParameterJdbcTemplate.query(query.toString(), paramMap,
+					new RowMapper() {
+
+						@Override
+						public DetailViewConfig mapRow(ResultSet rs, int rowNum) throws SQLException {
+							DetailViewConfig detailViewConfig = new DetailViewConfig();
+							detailViewConfig.setQueue(rs.getLong("queue"));
+							detailViewConfig.setSequence(rs.getInt("sequence"));
+							detailViewConfig.setFieldName(rs.getString("fieldName"));
+							detailViewConfig.setFieldLable(rs.getString("fieldLable"));
+							detailViewConfig.setColumFunction(rs.getString("columFunction"));
+							detailViewConfig.setEditable(rs.getString("editable"));
+							detailViewConfig.setEditDataType(rs.getString("editDataType"));
+							detailViewConfig.setButton(rs.getString("button"));
+							detailViewConfig.setButtonLable(rs.getString("buttonLable"));
+							detailViewConfig.setButtonAction(rs.getString("buttonAction"));
+							return detailViewConfig;
+						}
+					});
+//			System.
+			if (null != detailViewConfigs && !detailViewConfigs.isEmpty()) {
+				for (DetailViewConfig detailViewConfig : detailViewConfigs) {
+					DetailViewObject detailViewObject = new DetailViewObject();
+					if(detailViewConfig.getFieldLable().endsWith("as on"))
+						detailViewObject.setLable(detailViewConfig.getFieldLable()+" "+(new SimpleDateFormat("dd-MMM-yyyy").format(new Date())));
+					else
+					detailViewObject.setLable(detailViewConfig.getFieldLable());
+					detailViewObject.setSequence(detailViewConfig.getSequence());
+					detailViewObject.setEditable(detailViewConfig.getEditable());
+					detailViewObject.setEditDataType(detailViewConfig.getEditDataType());
+					detailViewObject.setButton(detailViewConfig.getButton());
+					detailViewObject.setButtonLable(detailViewConfig.getButtonLable());
+					detailViewObject.setButtonAction(detailViewConfig.getButtonAction());
+					if ("C".equals(detailViewConfig.getColumFunction())) {
+						try {
+							Field f = transactionDataSet.getClass().getDeclaredField(detailViewConfig.getFieldName());
+							f.setAccessible(true);
+							Object fieldValue = f.get(transactionDataSet);
+							if(null != fieldValue) {
+							if ("aadhaarNumber".equals(detailViewConfig.getFieldName())) {
+								try {
+									String decryptedAadhaar = StringUtils.decrypt(fieldValue.toString());
+									detailViewObject.setValue(decryptedAadhaar);
+								} catch (Exception e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+							} else if(("genericNumber1".equals(detailViewConfig.getFieldName())
+									|| "genericNumber2".equals(detailViewConfig.getFieldName())
+									|| "genericNumber3".equals(detailViewConfig.getFieldName()))
+									&& null != fieldValue){
+								String stringValue = fieldValue.toString();
+								detailViewObject.setValue(stringValue);
+//						} else if("genericNumber2".equals(detailViewConfig.getFieldName())){
+////								|| "genericNumber2".equals(detailViewConfig.getFieldName())
+////								|| "genericNumber3".equals(detailViewConfig.getFieldName()))
+////								&& null != fieldValue){
+//							String stringValue = fieldValue.toString();
+//							detailViewObject.setValue(stringValue);
+							} else if("genericDate2".equals(detailViewConfig.getFieldName())){
+								if(null != fieldValue && fieldValue instanceof Date) {
+									Date scheduledDateTime = (Date) fieldValue;
+									String scheduledDateTimeStr = new SimpleDateFormat("dd-MM-yyyy hh:mm a").format(scheduledDateTime);
+									detailViewObject.setValue(scheduledDateTimeStr);
+								}else
+									detailViewObject.setValue(fieldValue);
+							} else 
+								detailViewObject.setValue(fieldValue);
+							}
+						} catch (NoSuchFieldException | SecurityException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IllegalArgumentException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						} catch (IllegalAccessException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else  if ("F".equals(detailViewConfig.getColumFunction())) {
+						if ("getName".equals(detailViewConfig.getFieldName())) {
+							detailViewObject.setValue(getName(transactionDataSet));
+						} else if ("getLocation".equals(detailViewConfig.getFieldName())) {
+							detailViewObject.setValue(getLocation(transactionDataSet));
+						} else if ("calculateInterest".equals(detailViewConfig.getFieldName())) {
+							detailViewObject.setValue(calculateInterest(transactionDataSet));
+						} else if ("calculateTotalPayable".equals(detailViewConfig.getFieldName())) {
+							detailViewObject.setValue(calculateTotalPayable(transactionDataSet));
+						}
+					}
+					detailViewObjects.add(detailViewObject);
+				}
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return detailViewObjects;
+	}
+
+	private String getName(TransactionDataSet transactionDataSet) {
+		String name = null;
+		if (null != transactionDataSet.getFirstName() && null != transactionDataSet.getMiddleName()
+				&& null != transactionDataSet.getLastName())
+			name = transactionDataSet.getFirstName() + " " + transactionDataSet.getMiddleName() + " "
+					+ transactionDataSet.getLastName();
+		else if (null != transactionDataSet.getFirstName() && null != transactionDataSet.getLastName())
+			name = transactionDataSet.getFirstName() + " " + transactionDataSet.getLastName();
+		else
+			name = transactionDataSet.getFirstName();
+		return name;
+	}
+
+	private String getLocation(TransactionDataSet transactionDataSet) {
+		String location = null;
+		String query = "select dbo.fn_getGenericClassifier(:location,:companyId)";
+		Map<String, Object> paramMap = new HashMap<String, Object>();
+		paramMap.put("location", transactionDataSet.getVillage());
+		paramMap.put("companyId", 7L);
+		location = namedParameterJdbcTemplate.queryForObject(query, paramMap, String.class);
+		return location;
+	}
+
+	private BigDecimal calculateInterest(TransactionDataSet transactionDataSet) {
+		Date lastInterestPaidDate = transactionDataSet.getGenericDate1();
+		Date today = new Date();
+		LocalDateTime lastInterestPaidDateLDT = Instant.ofEpochMilli(lastInterestPaidDate.getTime())
+				.atZone(ZoneId.systemDefault()).toLocalDateTime();
+		LocalDateTime totayLDT = Instant.ofEpochMilli(today.getTime()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+		Long days = Duration.between(lastInterestPaidDateLDT, totayLDT).toDays();
+		System.out.println("************* The no of days calculated is :: "+days);
+		BigDecimal balanceInterest = ((transactionDataSet.getGenericDecimal4().add(
+				transactionDataSet.getGenericDecimal5())).multiply(
+						transactionDataSet.getGenericDecimal7()).
+				multiply(new BigDecimal(days))).divide(new BigDecimal(36500),2, RoundingMode.HALF_UP);
+		System.out.println("************* The balanceInterest calculated is :: "+balanceInterest);
+		return balanceInterest;
+	}
+	
+	private BigDecimal calculateTotalPayable(TransactionDataSet transactionDataSet) {
+		BigDecimal totalPayable = transactionDataSet.getGenericDecimal4().add(transactionDataSet.getGenericDecimal5())
+				.add(calculateInterest(transactionDataSet));
+		return totalPayable;
 	}
 }

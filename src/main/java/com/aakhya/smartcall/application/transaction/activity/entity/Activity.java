@@ -13,6 +13,9 @@ import javax.persistence.Id;
 import javax.persistence.IdClass;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
+import javax.persistence.Transient;
+
+import org.hibernate.annotations.Formula;
 
 @Entity
 @Table(name = "sc_activity")
@@ -39,6 +42,8 @@ public class Activity implements Serializable{
 	private Date validTo;
 	private String branchCode;
 	private String userId;
+	private String activityStatus;
+	private Date scheduledDateTime;
 	private String genericString1;
 	private String genericString2;
 	private String genericString3;
@@ -80,8 +85,8 @@ public class Activity implements Serializable{
 	private Date genericDate9;
 	private Date genericDate10;
 	private String status;
-	private String activityStatus;
 	private List<ActivityDetail> activityDetails;
+	private Activity childActivity;
 	@Id
 	@Column(name = "activityid")
 	public Long getActivityId() {
@@ -195,6 +200,20 @@ public class Activity implements Serializable{
 	}
 	public void setUserId(String userId) {
 		this.userId = userId;
+	}
+	@Column(name = "activitystatus")
+	public String getActivityStatus() {
+		return activityStatus;
+	}
+	public void setActivityStatus(String activityStatus) {
+		this.activityStatus = activityStatus;
+	}
+	@Formula(value = "dbo.fn_getScheduledDate(activityId)")
+	public Date getScheduledDateTime() {
+		return scheduledDateTime;
+	}
+	public void setScheduledDateTime(Date scheduledDateTime) {
+		this.scheduledDateTime = scheduledDateTime;
 	}
 	@Column(name = "genericstring1")
 	public String getGenericString1() {
@@ -476,8 +495,7 @@ public class Activity implements Serializable{
 	public void setGenericDate10(Date genericDate10) {
 		this.genericDate10 = genericDate10;
 	}
-
-	@OneToMany(mappedBy = "activity",fetch = FetchType.EAGER,cascade = CascadeType.ALL,targetEntity = ActivityDetail.class)
+	@OneToMany(mappedBy = "activity",fetch = FetchType.LAZY,orphanRemoval = true,cascade = CascadeType.ALL,targetEntity = ActivityDetail.class)
 	public List<ActivityDetail> getActivityDetails() {
 		return activityDetails;
 	}
@@ -485,18 +503,18 @@ public class Activity implements Serializable{
 	public void setActivityDetails(List<ActivityDetail> activityDetails) {
 		this.activityDetails = activityDetails;
 	}
+	@Transient
+	public Activity getChildActivity() {
+		return childActivity;
+	}
+	public void setChildActivity(Activity childActivity) {
+		this.childActivity = childActivity;
+	}
 	@Column(name = "status")
 	public String getStatus() {
 		return status;
 	}
 	public void setStatus(String status) {
 		this.status = status;
-	}
-	@Column(name = "activitystatus")
-	public String getActivityStatus() {
-		return activityStatus;
-	}
-	public void setActivityStatus(String activityStatus) {
-		this.activityStatus = activityStatus;
 	}
 }

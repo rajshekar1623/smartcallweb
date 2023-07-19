@@ -25,7 +25,8 @@ public class ActivityFromUI implements Serializable {
 	private String attemptFlow;
 	private String attemptNotes;
 	private String scheduleType;
-	private Date scheduleDateTime;
+	private String scheduleDate;
+	private String scheduleTime;
 	private String status;
 	public Long getActivityId() {
 		return activityId;
@@ -123,11 +124,17 @@ public class ActivityFromUI implements Serializable {
 	public void setScheduleType(String scheduleType) {
 		this.scheduleType = scheduleType;
 	}
-	public Date getScheduleDateTime() {
-		return scheduleDateTime;
+	public String getScheduleDate() {
+		return scheduleDate;
 	}
-	public void setScheduleDateTime(Date scheduleDateTime) {
-		this.scheduleDateTime = scheduleDateTime;
+	public void setScheduleDate(String scheduleDate) {
+		this.scheduleDate = scheduleDate;
+	}
+	public String getScheduleTime() {
+		return scheduleTime;
+	}
+	public void setScheduleTime(String scheduleTime) {
+		this.scheduleTime = scheduleTime;
 	}
 	public String getStatus() {
 		return status;

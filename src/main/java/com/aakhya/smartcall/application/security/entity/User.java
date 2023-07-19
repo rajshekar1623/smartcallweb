@@ -99,6 +99,8 @@ public class User implements Serializable{
 	private BigDecimal genericNumber9;
 	private BigDecimal genericNumber10;
 	private List<UserRole> userRoles;
+	private String authenticationResult;
+	
 	@Id
 	@Column(name="userid")
 	public String getUserId() {
@@ -531,5 +533,12 @@ public class User implements Serializable{
 	}
 	public void setUserRoles(List<UserRole> userRoles) {
 		this.userRoles = userRoles;
+	}
+	@Transient
+	public String getAuthenticationResult() {
+		return authenticationResult;
+	}
+	public void setAuthenticationResult(String authenticationResult) {
+		this.authenticationResult = authenticationResult;
 	}
 }

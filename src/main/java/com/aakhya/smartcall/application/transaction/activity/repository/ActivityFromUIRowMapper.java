@@ -2,6 +2,8 @@ package com.aakhya.smartcall.application.transaction.activity.repository;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 
 import org.springframework.jdbc.core.RowMapper;
 
@@ -22,7 +24,15 @@ public class ActivityFromUIRowMapper implements RowMapper<ActivityFromUI> {
 		activityFromUI.setAttemptNotes(rs.getString("attemptNotes"));
 		activityFromUI.setAttemptSequence(rs.getLong("attemptSequence"));
 		activityFromUI.setAttemptStatus(rs.getString("attemptStatus"));
-		activityFromUI.setScheduleDateTime(rs.getDate("scheduleDateTime"));
+		Date scheduleDateTime = rs.getDate("scheduleDateTime");
+		if(null != scheduleDateTime) {
+			String scheduleDate = new SimpleDateFormat("dd-MM-yyyy")
+					.format(scheduleDateTime);
+			String ascheduleTime = new SimpleDateFormat("hh:mm a")
+					.format(scheduleDateTime);
+			activityFromUI.setScheduleDate(scheduleDate);
+			activityFromUI.setScheduleTime(ascheduleTime);
+		}
 		activityFromUI.setScheduleType(rs.getString("scheduleType"));
 		return activityFromUI;
 	}

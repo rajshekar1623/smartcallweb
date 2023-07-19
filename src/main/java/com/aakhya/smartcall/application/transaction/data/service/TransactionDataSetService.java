@@ -1,6 +1,7 @@
 package com.aakhya.smartcall.application.transaction.data.service;
 
 import java.io.FileInputStream;
+import java.math.BigDecimal;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -18,8 +19,11 @@ import com.aakhya.smartcall.application.admin.entity.GenericClassifier;
 import com.aakhya.smartcall.application.admin.entity.RecordStatusType;
 import com.aakhya.smartcall.application.admin.service.SequenceService;
 import com.aakhya.smartcall.application.integration.service.ExcelFileReader;
+import com.aakhya.smartcall.application.security.entity.User;
 import com.aakhya.smartcall.application.transaction.data.entity.DataSetType;
-import com.aakhya.smartcall.application.transaction.data.entity.TemporaryTransaction;
+import com.aakhya.smartcall.application.transaction.data.entity.DetailViewObject;
+import com.aakhya.smartcall.application.transaction.data.entity.DpdQueue;
+import com.aakhya.smartcall.application.transaction.data.entity.DpdQueueList;
 import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
 import com.aakhya.smartcall.application.transaction.data.repository.TransactionDataSetJdbcRepository;
 import com.aakhya.smartcall.application.transaction.data.repository.TransactionDataSetRepository;
@@ -56,7 +60,7 @@ public class TransactionDataSetService {
 		transactionDataSetRepository.save(transactionDataSet);
 	}
 
-	public void createTransactionDataSet(List<TransactionDataSet> transactionDataSets) {
+	public void saveTransactionDataSet(List<TransactionDataSet> transactionDataSets) {
 		if (null != transactionDataSets && !transactionDataSets.isEmpty()) {
 //			int totalCount = transactionDataSets.size();
 //			int processedCount = 0;
@@ -245,5 +249,96 @@ public class TransactionDataSetService {
 	}
 
 	public void uploadDataToDb() {
+	}
+	
+	/*
+	 * All Methods below are for Mobile Application Backend
+	 */
+	private TransactionDataSet findTransactionDataSetByPk(Long dataSetId) {
+		Optional<TransactionDataSet> optionalTds = transactionDataSetRepository.findById(dataSetId);
+		if(null != optionalTds && optionalTds.isPresent()) {
+			TransactionDataSet tds = optionalTds.get();
+			if(null != tds.getDateOfBirth()) {
+				tds.setGenericString10(new SimpleDateFormat("dd-MM-yyyy").format(tds.getDateOfBirth()));
+			}
+			return tds;
+		}else
+			return null;
+	}
+
+	public List<TransactionDataSet> findAllTransactionDataSetByUser(DataSetType dataSetType, User user) {
+		return transactionDataSetRepository.findAllByDataSetTypeAndBranch(dataSetType.getValue(), user.getBranchCode());
+	}
+
+	public void createTransactionDataSet(List<TransactionDataSet> transactionDataSets) {
+		if (null != transactionDataSets && !transactionDataSets.isEmpty()) {
+			for (TransactionDataSet transactionDataSet : transactionDataSets) {
+				saveTransactionDataSet(transactionDataSet);
+			}
+		}
+	}
+	
+	public List<DpdQueue> findDpdQueus(String userId,String branchCode) {
+		List<DpdQueue> dpdQueues = new ArrayList<DpdQueue>();
+		DpdQueue dpdQueue30Day = jdbcRepository.getDpDQueue(userId,branchCode, 3738L);
+		dpdQueues.add(dpdQueue30Day);
+		DpdQueue dpdQueue60Day = jdbcRepository.getDpDQueue(userId,branchCode, 3739L);
+		dpdQueues.add(dpdQueue60Day);
+		DpdQueue dpdQueue90Day = jdbcRepository.getDpDQueue(userId,branchCode, 3740L);
+		dpdQueues.add(dpdQueue90Day);
+		DpdQueue dpdQueueAbove90 = jdbcRepository.getDpDQueue(userId,branchCode, 3750L);
+		dpdQueues.add(dpdQueueAbove90);
+		return dpdQueues;
+	}
+	
+	public List<DpdQueueList> getDpdQueueList(String userId,String branchCode,Long queue){
+		return jdbcRepository.getDpdQueueList(userId,branchCode, queue);
+	}
+	
+	public List<DetailViewObject> getDetailView(Long dataSetId, Long queue) {
+		TransactionDataSet transactionDataSet = findTransactionDataSetByPk(dataSetId);
+//		System.out.println("Member Name is :: "+transactionDataSet.getFirstName());
+//		List<DetailViewObject> detailViewObjects = transactionDataSetJdbcRepository.getDetailView(transactionDataSet, queue);
+//		if(null != detailViewObjects && !detailViewObjects.isEmpty()) {
+//			for(DetailViewObject detailViewObject:detailViewObjects) {
+//				System.out.println("******** [Key = "+detailViewObject.getLable()+"][Value = "+detailViewObject.getValue()+"]");
+//			}
+//		}else {
+//			System.out.println("Detail View Objects cannot be retrieved");
+//		}
+		return jdbcRepository.getDetailView(transactionDataSet, queue);
+	}
+	
+	public List<DpdQueueList> getVisitList(String userId,String branchCode) {
+		return jdbcRepository.getVisitList(userId, branchCode);
+	}
+	public List<DpdQueueList> getCallList(String userId,String branchCode) {
+		return jdbcRepository.getCallList(userId, branchCode);
+	}
+	
+	public String updateLocation(Long dataSetId,String lat,String lon,String dist) {
+		Optional<TransactionDataSet> otds = transactionDataSetRepository.findById(dataSetId);
+		if(null != otds && otds.isPresent()) {
+			TransactionDataSet tds = otds.get();
+			if(null != lat && null != lon && null != dist) {
+				try {
+					Double latDouble = Double.valueOf(lat);
+					BigDecimal lattitude = BigDecimal.valueOf(latDouble);
+					Double lonDouble = Double.valueOf(lon);
+					BigDecimal longitude = BigDecimal.valueOf(lonDouble);
+					Double distDouble = Double.valueOf(dist);
+					BigDecimal distance = BigDecimal.valueOf(distDouble);
+					tds.setGenericDecimal10(lattitude);
+					tds.setGenericDecimal11(longitude);
+					tds.setGenericDecimal12(distance);
+					transactionDataSetRepository.save(tds);
+					return "SUCCESS";
+				}catch(NumberFormatException e) {
+					return "Invalid Data";
+				}
+			}else
+				return "Invalid Data";
+		}else
+			return "Invalid DataSetId";
 	}
 }

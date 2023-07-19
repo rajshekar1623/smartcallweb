@@ -21,7 +21,7 @@ public class ActivityDetail implements Serializable {
 	private static final long serialVersionUID = 5750905047142840128L;
 	private Long activityId;
 	private Date activityDateTime;
-	private Long attemptSequence;
+	private Integer attemptSequence;
 	private Date attemptDateTime;
 	private Integer attemptDuration;
 	private String attemptStatus;
@@ -121,11 +121,11 @@ public class ActivityDetail implements Serializable {
 
 	@Id
 	@Column(name = "attemptsequence")
-	public Long getAttemptSequence() {
+	public Integer getAttemptSequence() {
 		return this.attemptSequence;
 	}
 
-	public void setAttemptSequence(Long attemptSequence) {
+	public void setAttemptSequence(Integer attemptSequence) {
 		this.attemptSequence = attemptSequence;
 	}
 

@@ -12,10 +12,14 @@ public interface TransactionDataSetRepository extends JpaRepository<TransactionD
 
 	@Query("select c from TransactionDataSet c " + "where dataSetType =  :dataSetType")
 	List<TransactionDataSet> findAllByDataSetType(@Param("dataSetType") Long dataSetType);
-	
+
 	@Query("select c from TransactionDataSet c where genericNumber2 =  :loanAccountNumber")
 	TransactionDataSet findDataSetByLoanAccountNumber(Long loanAccountNumber);
-	
+
 	@Query("select count(c) from TransactionDataSet c ")
 	Long queryForCount();
+
+	@Query("select c from TransactionDataSet c " + "where dataSetType =  :dataSetType and branchCode = :branchCode")
+	List<TransactionDataSet> findAllByDataSetTypeAndBranch(@Param("dataSetType") Long dataSetType,
+			@Param("branchCode") String branchCode);
 }
