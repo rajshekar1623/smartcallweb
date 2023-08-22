@@ -32,17 +32,33 @@ public class UserService {
 	private UserRoleRepository userRoleRepository;
 
 	public User findUserById(String userId) {
-		Optional<User> optionalUser = userRepository.findById(userId);
-		if (optionalUser.isPresent()) {
-			User user = optionalUser.get();
+//		Optional<User> optionalUser = userRepository.findById(userId);
+//		if (optionalUser.isPresent()) {
+			User user = userRepository.findUserByUserId(userId);
+//			user.setUserRoles(null);
 			if (null != user.getUserRoles() && !user.getUserRoles().isEmpty()) {
 				for (@SuppressWarnings("unused") UserRole userRole : user.getUserRoles()) {
 //					System.out.println(userRole.getRoleDescription());
 				}
 			}
 			return user;
-		} else
-			return null;
+//		} else
+//			return null;
+	}
+	
+	public User findOnlyUserById(String userId) {
+//		Optional<User> optionalUser = userRepository.findById(userId);
+//		if (optionalUser.isPresent()) {
+			User user = userRepository.findUserOnlyByUserId(userId);
+			user.setUserRoles(null);
+//			if (null != user.getUserRoles() && !user.getUserRoles().isEmpty()) {
+//				for (@SuppressWarnings("unused") UserRole userRole : user.getUserRoles()) {
+////					System.out.println(userRole.getRoleDescription());
+//				}
+//			}
+			return user;
+//		} else
+//			return null;
 	}
 
 	public List<User> findAllUsers(String userNameFilter, String branchCode) {
@@ -220,7 +236,9 @@ public class UserService {
 				userFromDB.setOtpCode(otpCode);
 				sendOtpSms(userFromDB.getUserName(), otpCode, userFromDB.getMobileNumber());
 				userRepository.save(userFromDB);
-				return userFromDB;
+				User tempUsr = new User();
+				tempUsr.setUserId(user.getUserId());
+				return tempUsr;
 			} else {
 				user.setAuthenticationResult("INVALID USERID");
 				return user;
@@ -234,7 +252,7 @@ public class UserService {
 			StringBuffer urlString = new StringBuffer();
 			// urlString.append("http://103.16.101.52:8080/sendsms/bulksms?username=kap2-kapuser&password=trans321&type=0&dlr=1");
 			urlString.append(
-					"http://173.45.76.227/sendunicode.aspx?username=smartcall&pass=smartcall56&route=trans1&senderid=DANCEE");
+					"http://173.45.76.227/sendunicode.aspx?username=c&pass=smartcall56&route=trans1&senderid=DANCEE");
 			urlString.append("&numbers=" + mobileNumber);
 //			urlString.append("&templateid=1207162374774514861");
 			urlString.append("&ispreapproved=1");

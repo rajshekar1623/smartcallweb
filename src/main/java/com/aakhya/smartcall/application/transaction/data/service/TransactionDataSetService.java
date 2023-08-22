@@ -2,6 +2,8 @@ package com.aakhya.smartcall.application.transaction.data.service;
 
 import java.io.FileInputStream;
 import java.math.BigDecimal;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -11,6 +13,8 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -18,25 +22,35 @@ import com.aakhya.smartcall.application.admin.entity.EntityNameType;
 import com.aakhya.smartcall.application.admin.entity.GenericClassifier;
 import com.aakhya.smartcall.application.admin.entity.RecordStatusType;
 import com.aakhya.smartcall.application.admin.service.SequenceService;
+import com.aakhya.smartcall.application.admin.service.utils.Distance;
+import com.aakhya.smartcall.application.admin.service.utils.Element;
+import com.aakhya.smartcall.application.admin.service.utils.Root;
+import com.aakhya.smartcall.application.admin.service.utils.Row;
 import com.aakhya.smartcall.application.integration.service.ExcelFileReader;
 import com.aakhya.smartcall.application.security.entity.User;
 import com.aakhya.smartcall.application.transaction.data.entity.DataSetType;
 import com.aakhya.smartcall.application.transaction.data.entity.DetailViewObject;
 import com.aakhya.smartcall.application.transaction.data.entity.DpdQueue;
 import com.aakhya.smartcall.application.transaction.data.entity.DpdQueueList;
+import com.aakhya.smartcall.application.transaction.data.entity.TemporaryTransaction;
 import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
+import com.aakhya.smartcall.application.transaction.data.repository.TemporaryTransactionRepository;
 import com.aakhya.smartcall.application.transaction.data.repository.TransactionDataSetJdbcRepository;
 import com.aakhya.smartcall.application.transaction.data.repository.TransactionDataSetRepository;
+import com.google.gson.Gson;
 
 @Service
 public class TransactionDataSetService {
 
+	private static final String apiKey = "AIzaSyDsqxiDX4Pqfn7NUYzKFS2Nn2H4W5ywtaQ";
 	@Autowired
 	private TransactionDataSetRepository transactionDataSetRepository;
 	@Autowired
 	private SequenceService sequenceService;
 	@Autowired
 	private TransactionDataSetJdbcRepository jdbcRepository;
+	@Autowired
+	private TemporaryTransactionRepository temporaryTransactionRepository;
 
 	public List<TransactionDataSet> findAllTransactionDataSet(DataSetType dataSetType) {
 		return transactionDataSetRepository.findAllByDataSetType(dataSetType.getValue());
@@ -54,9 +68,17 @@ public class TransactionDataSetService {
 		if (null != transactionDataSet
 				&& (null == transactionDataSet.getDataSetId() || transactionDataSet.getDataSetId().equals(0L))) {
 			Long dataSetId = sequenceService.getNewSequence(EntityNameType.TRANS_DATA_SET,
-					transactionDataSet.getCompanyId());
+					1L);
+			transactionDataSet.setCompanyId(1L);
 			transactionDataSet.setDataSetId(dataSetId);
-		}
+			transactionDataSet.setStatus(RecordStatusType.ACTIVE.getValue());
+			transactionDataSet.setCreatedBy("Admin");
+			transactionDataSet.setCreatedDateTime(new Date());
+			transactionDataSet.setValidFrom(new Date());
+			transactionDataSet.setDataSetType(2L);
+			transactionDataSet.setDataSetDescription("CUSTOMER_COLLECTION");
+		}else
+		transactionDataSet.setCompanyId(1L);
 		transactionDataSetRepository.save(transactionDataSet);
 	}
 
@@ -64,8 +86,8 @@ public class TransactionDataSetService {
 		if (null != transactionDataSets && !transactionDataSets.isEmpty()) {
 //			int totalCount = transactionDataSets.size();
 //			int processedCount = 0;
-			List<TransactionDataSet> transactionDataSetsForInsert = new ArrayList<TransactionDataSet>();
-			List<TransactionDataSet> transactionDataSetsForUpdate = new ArrayList<TransactionDataSet>();
+//			List<TransactionDataSet> transactionDataSetsForInsert = new ArrayList<TransactionDataSet>();
+//			List<TransactionDataSet> transactionDataSetsForUpdate = new ArrayList<TransactionDataSet>();
 
 			for (TransactionDataSet transactionDataSet : transactionDataSets) {
 				if (null != transactionDataSet.getGenericNumber2()) {
@@ -95,7 +117,7 @@ public class TransactionDataSetService {
 						existingData.setGenericDecimal1(transactionDataSet.getGenericDecimal7());
 						existingData.setUpdatedBy("Admin");
 						existingData.setUpdatedDateTime(new Date());
-						transactionDataSetsForUpdate.add(existingData);
+						transactionDataSetRepository.save(existingData);
 					} else {
 						if (null == transactionDataSet.getDataSetId() || transactionDataSet.getDataSetId().equals(0L)) {
 							Long dataSetId = sequenceService.getNewSequence(EntityNameType.TRANS_DATA_SET, 1L);
@@ -115,17 +137,17 @@ public class TransactionDataSetService {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-							transactionDataSetsForInsert.add(transactionDataSet);
+							transactionDataSetRepository.save(transactionDataSet);
 						}
 
 					}
 //				processedCount++;
 //				float processedPercentage = (float) processedCount/totalCount;
 //				progressListner.accept(processedPercentage);
-					if (null != transactionDataSetsForInsert && !transactionDataSetsForInsert.isEmpty())
-						jdbcRepository.createTransactions(transactionDataSetsForInsert);
-					if (null != transactionDataSetsForUpdate && !transactionDataSetsForUpdate.isEmpty())
-						jdbcRepository.updateTransactions(transactionDataSetsForUpdate);
+//					if (null != transactionDataSetsForInsert && !transactionDataSetsForInsert.isEmpty())
+//						jdbcRepository.createTransactions(transactionDataSetsForInsert);
+//					if (null != transactionDataSetsForUpdate && !transactionDataSetsForUpdate.isEmpty())
+//						jdbcRepository.updateTransactions(transactionDataSetsForUpdate);
 				}
 			}
 //			transactionDataSetRepository.saveAll(transactionDataSets);
@@ -212,6 +234,56 @@ public class TransactionDataSetService {
 		transactionDataSets = ExcelFileReader.processDilimitedFile(fis, initialCount, this);
 		return transactionDataSets;
 	}
+	
+	public List<TemporaryTransaction> uploadDataNew(FileInputStream fis) {
+		List<TemporaryTransaction> temporaryTransactions = ExcelFileReader.processDilimitedFileNew(fis);
+//		if(null != temporaryTransactions && !temporaryTransactions.isEmpty()) {
+//			for(TemporaryTransaction tempTran:temporaryTransactions) {
+//				TransactionDataSet dataSet = new TransactionDataSet();
+//				dataSet.setFirstName(tempTran.getFirstname());
+//				dataSet.setDateOfBirth(tempTran.getDob());
+//				dataSet.setGender(tempTran.getGender());
+//				dataSet.setReligion(tempTran.getReligion());
+//				dataSet.setSocialCategory(tempTran.getSocialcategory());
+//				dataSet.setVoterId(tempTran.getVoterid());
+//				dataSet.setDrivingLicenseNumber(tempTran.getDrivinglicense());
+////				dataSet.set(tempTran.getRationcard());
+//				dataSet.setPanCardNumber(tempTran.getPancard());
+////				if(null != tempTran.getGp())
+////				dataSet.setGrampanchayat();
+//				dataSet.setPincode(tempTran.getPincode());
+////				dataSet.setVillage(tempTran.getVillage());
+//				dataSet.setBranchCode(tempTran.getBranchcode());
+//				dataSet.setGenericString4(tempTran.getBranchname());
+////				dataSet.setFathe(tempTran.getFathersname());
+//				dataSet.setGenericString2(tempTran.getProduct());
+//				if(null != tempTran.getMobilenumber())
+//				dataSet.setGenericNumber1(Long.valueOf(tempTran.getMobilenumber()));
+//				if(null != tempTran.getLoanaccountnumber())
+//				dataSet.setGenericNumber2(Long.valueOf(tempTran.getLoanaccountnumber()));
+//				dataSet.setGenericNumber3(tempTran.getDpdqueue());
+//				dataSet.setGenericDecimal4(tempTran.getCurrentoutstandingbalance());
+//				dataSet.setGenericDecimal5(tempTran.getPrincipledue());
+//				dataSet.setGenericDecimal6(tempTran.getInterestdue());
+//				dataSet.setGenericDecimal7(tempTran.getInterestrate());
+//				dataSet.setGenericDate1(tempTran.getLastinterestapplieddate());
+//				dataSet.setGenericDate2(tempTran.getNpadate());
+//				transactionDataSets.add(dataSet);
+//			}
+//		}
+//		transactionDataSets = ExcelFileReader.processDilimitedFile(fis, initialCount, this);
+		return temporaryTransactions;
+	}
+	
+	public void uploadDataFromFile(List<TemporaryTransaction> temporaryTransactions) {
+		try {
+			temporaryTransactionRepository.saveAll(temporaryTransactions);
+			jdbcRepository.uploadDataStoredProcedure();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
 
 	public Long getDataSetCount() {
 		return transactionDataSetRepository.queryForCount();
@@ -246,6 +318,36 @@ public class TransactionDataSetService {
 			String result = restTemplate.getForObject(url, String.class);
 			System.out.println(result);
 		}
+	}
+	
+	public Double getDistance(Double originLat, Double originLon, Double destLat,Double destLon) {
+		String url = "https://maps.googleapis.com/maps/api/distancematrix/json?origins="+originLat+"%2C"+originLon+"&destinations="+destLat+"%2C"+destLon+"&key="+apiKey;
+		Gson gson = new Gson();
+		try {
+			URI u = new URI(url);
+			RestTemplate restTemplate = new RestTemplate();
+			ResponseEntity<Root> response = restTemplate.exchange(u, HttpMethod.GET, null, Root.class);
+			Root root = response.getBody();
+			if (null != root.getRows() && !root.getRows().isEmpty()) {
+				for (Row row : root.getRows()) {
+					if (null != row.getElements() && !row.getElements().isEmpty()) {
+						for (Element element : row.getElements()) {
+							Distance distance = element.getDistance();
+							if (null != distance) {
+								System.out.println("Distance :: " + distance.text);
+								Double dist = Double.valueOf(distance.value)/1000;
+								return dist;
+							}else
+								System.out.println(gson.toJson(element));
+						}
+					}
+				}
+			}
+		} catch (URISyntaxException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		return null;
 	}
 
 	public void uploadDataToDb() {
@@ -340,5 +442,24 @@ public class TransactionDataSetService {
 				return "Invalid Data";
 		}else
 			return "Invalid DataSetId";
+	}
+	
+	public List<DpdQueueList> getNearByCustomersList(String userId, String lat, String lon) {
+		if (null != lat && !lat.isEmpty() && null != lon && !lon.isEmpty()) {
+			Double latD = Double.valueOf(lat);
+			Double lonD = Double.valueOf(lon);
+			List<DpdQueueList> dpdQueueListApprox = jdbcRepository.getNearByCustomersList(userId, latD, lonD);
+			List<DpdQueueList> dpdQueueListAccurate = new ArrayList<DpdQueueList>();
+			if(null != dpdQueueListApprox && !dpdQueueListApprox.isEmpty()) {
+				for(DpdQueueList dpdQueueList:dpdQueueListApprox) {
+					Double distance = getDistance(latD, lonD, dpdQueueList.getLattitute(), dpdQueueList.getLongitute());
+					if(distance.compareTo(3d) >= 0) {
+						dpdQueueListAccurate.add(dpdQueueList);
+					}
+				}
+			}
+			return dpdQueueListAccurate;
+		} else
+			return null;
 	}
 }

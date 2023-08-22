@@ -12,8 +12,8 @@ import com.aakhya.smartcall.application.dashboard.entity.ActivitySummary;
 import com.aakhya.smartcall.application.dashboard.entity.ActivitySummaryUser;
 import com.aakhya.smartcall.application.dashboard.entity.CashCollection;
 import com.aakhya.smartcall.application.dashboard.entity.DashBoard;
+import com.aakhya.smartcall.application.dashboard.entity.FieldVisitByUser;
 import com.aakhya.smartcall.application.dashboard.repository.DashboardJdbcRepocitory;
-import com.aakhya.smartcall.application.security.entity.User;
 
 
 @Service
@@ -22,7 +22,7 @@ public class DashBoardService {
 	@Autowired
 	private DashboardJdbcRepocitory dashboardJdbcRepocitory;
 
-	public List<DashBoard> getDashBoardForUser(User user){
+	public List<DashBoard> getDashBoardForUser(String userId){
 		List<DashBoard> dashBoardItems = new ArrayList<DashBoard>();
 		dashBoardItems.add(new DashBoard("Marketing", 28, 12,1));
 		dashBoardItems.add(new DashBoard("Collection", 13, 36,1));
@@ -46,5 +46,9 @@ public class DashBoardService {
 	public List<CashCollection> findCashCollections(Date fromDate, Date toDate, Branch cluster,
 			Branch branch){
 		return dashboardJdbcRepocitory.findCashCollections(fromDate, toDate, cluster, branch);
+	}
+	
+	public List<FieldVisitByUser> findFieldVisitsByUser(){
+		return dashboardJdbcRepocitory.findFieldVisitsByUser();
 	}
 }

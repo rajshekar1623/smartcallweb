@@ -3,6 +3,8 @@ package com.aakhya.smartcall.application.transaction.data.repository;
 import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.sql.CallableStatement;
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -19,8 +21,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.CallableStatementCreator;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.core.SqlParameter;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -823,5 +827,79 @@ public class TransactionDataSetJdbcRepository {
 		BigDecimal totalPayable = transactionDataSet.getGenericDecimal4().add(transactionDataSet.getGenericDecimal5())
 				.add(calculateInterest(transactionDataSet));
 		return totalPayable;
+	}
+	
+	public void uploadDataStoredProcedure(){
+		List<SqlParameter> declaredParameters = new ArrayList<SqlParameter>();
+		jdbcTemplate.call(new CallableStatementCreator() {
+			public CallableStatement createCallableStatement(Connection con)
+					throws SQLException {
+				CallableStatement stmnt = null;
+				try {
+					stmnt = con.prepareCall("EXEC [smartcall].[dbo].[sp_uploadData] ");
+				} catch (Exception e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				return stmnt;
+			}
+		}, declaredParameters);
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<DpdQueueList> getNearByCustomersList(String userId, Double lat,Double lon) {
+		List<DpdQueueList> nearByCustomersList = new ArrayList<DpdQueueList>();
+		List<DpdQueueList> dpdQueueLists = new ArrayList<DpdQueueList>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, ");
+		query.append(" dbo.fn_getGenericClassifier(village,7) as location, ");
+		query.append(" trn.genericNumber1,trn.genericNumber4,trn.genericDecimal10,trn.genericDecimal11,trn.genericDecimal12,");
+		query.append(" activityStatus actionStatus from sc_transactionDataSet trn join sc_activity act  ");
+		query.append(" on(trn.dataSetId = act.dataSetId and trn.dataSetType = 2 and activityType = 1001 ");
+		query.append(" and act.userId = :userId) ");
+//		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, ");
+//		query.append(" dbo.fn_getGenericClassifier(village,7) as location, ");
+//		query.append(" trn.genericNumber1,trn.genericNumber4,trn.genericDecimal10,trn.genericDecimal11, "); 
+//		query.append(" trn.genericDecimal12,activityStatus actionStatus from sc_transactionDataSet trn join sc_activity act  ");
+//		query.append(" on(trn.dataSetId = act.dataSetId and trn.dataSetType = 2 and activityType = 1004 ");
+//		query.append(" and trn.genericNumber3 = :queue and act.userId = :userId) ");
+//		query.append(" select trn.dataSetId,dbo.fn_getName(trn.dataSetId) memberName, dbo.fn_getGenericClassifier(village,7) as location, ");
+//		query.append(" trn.genericNumber1,trn.genericNumber4,trn.genericDecimal10,trn.genericDecimal11, trn.genericDecimal12, ");
+//		query.append(" activityStatus actionStatus from sc_transactionDataSet trn join sc_activity act  on(trn.dataSetId = act.dataSetId ");
+//		query.append(" and trn.dataSetType = 2 and activityType = 1004 and act.userId = :userId) join sc_activityDetail actDet ");
+//		query.append(" on(act.activityId = actDet.activityId and actDet.scheduleType = 'VISIT') ");
+		Map<String, Object> params = new HashMap<String, Object>();
+		params.put("userId", userId);
+		dpdQueueLists = namedParameterJdbcTemplate.query(query.toString(), params, new RowMapper() {
+
+			@Override
+			public DpdQueueList mapRow(ResultSet rs, int rowNum) throws SQLException {
+				DpdQueueList dpdQueueList = new DpdQueueList();
+				dpdQueueList.setDataSetId(rs.getLong("dataSetId"));
+				dpdQueueList.setMemberName(rs.getString("memberName"));
+				dpdQueueList.setLocation(rs.getString("location"));
+				dpdQueueList.setActionStatus(rs.getString("actionStatus"));
+				dpdQueueList.setMobileNumber(rs.getString("genericNumber1"));
+				dpdQueueList.setPinCode(rs.getString("genericNumber4"));
+				dpdQueueList.setLattitute(rs.getDouble("genericDecimal10"));
+				dpdQueueList.setLongitute(rs.getDouble("genericDecimal11"));
+				dpdQueueList.setDistance(rs.getDouble("genericDecimal12"));
+				return dpdQueueList;
+			}
+		});
+		if(null != dpdQueueLists && !dpdQueueLists.isEmpty()) {
+			for(DpdQueueList dpdQueueList:dpdQueueLists) {
+				double distance = calculateDistanceInKiloMeters(lat,lon,dpdQueueList.getLattitute(),
+						dpdQueueList.getLongitute());
+				if(distance <= 3)
+					nearByCustomersList.add(dpdQueueList);
+			}
+		}
+		return nearByCustomersList;
+	}
+	
+	public double calculateDistanceInKiloMeters(double lat1, double long1, double lat2, double long2) {
+		double dist = org.apache.lucene.util.SloppyMath.haversinMeters(lat1, long1, lat2, long2)/1000;
+		return dist;
 	}
 }

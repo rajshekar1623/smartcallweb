@@ -65,6 +65,12 @@ public class ActivityJdbcRepository {
 		query.append(" from sc_activity a join sc_activityDetail b");
 		query.append(" on(a.activityId = b.activityId and a.dataSetId = :dataSetId ");
 		query.append(" and a.parentActivity is not null and (activityType <> 1004 or b.attemptFlow is not null)) order by a.activityId desc");
+		query.append(" union ");
+		query.append(" select a.activityDateTime,dbo.fn_getUserName(a.userId,1) userName,");
+		query.append(" b.scheduleType,dbo.getScheduleDateTime(a.activityId) scheduleDateTime,b.attemptFlow,a.activityDescription,a.genericDecimal1");
+		query.append(" from sc_activity_arch a join sc_activityDetail_arch b");
+		query.append(" on(a.activityId = b.activityId and a.dataSetId = :dataSetId ");
+		query.append(" and a.parentActivity is not null and (activityType <> 1004 or b.attemptFlow is not null)) order by a.activityId desc");
 		Map<String, Object> paramMap = new HashMap<String, Object>();
 		paramMap.put("dataSetId", dataSetId);
 		activities = namedParameterJdbcTemplate.query(query.toString(), paramMap, new RowMapper() {
@@ -165,7 +171,11 @@ public class ActivityJdbcRepository {
 							case "CHP":
 								steps.add("Cheque payment");
 								break;
+							case "VTC":
+								steps.add("Visited the customer");
+								break;
 							}
+							
 						}
 						Date scheduleDateTime = rs.getTimestamp("scheduleDateTime");
 						if (null != scheduleDateTime) {

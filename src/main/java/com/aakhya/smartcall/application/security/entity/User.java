@@ -21,6 +21,7 @@ import org.hibernate.annotations.Formula;
 import org.springframework.lang.NonNull;
 
 import com.aakhya.smartcall.application.admin.entity.Branch;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
 @Table(name = "sc_user")
@@ -98,6 +99,7 @@ public class User implements Serializable{
 	private BigDecimal genericNumber8;
 	private BigDecimal genericNumber9;
 	private BigDecimal genericNumber10;
+	@JsonIgnore
 	private List<UserRole> userRoles;
 	private String authenticationResult;
 	

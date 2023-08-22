@@ -2,6 +2,8 @@
   "name": "no-name",
   "license": "UNLICENSED",
   "dependencies": {
+    "@flowingcode/google-map": "3.2.4",
+    "@googlemaps/markerclusterer": "2.0.8",
     "@polymer/iron-icon": "3.0.1",
     "@polymer/iron-iconset-svg": "3.0.1",
     "@polymer/iron-list": "3.1.0",
@@ -264,15 +266,19 @@
     "proj4": "$proj4",
     "@vaadin/tabsheet": "$@vaadin/tabsheet",
     "@vaadin/tooltip": "$@vaadin/tooltip",
-    "line-awesome": "$line-awesome",
     "lit-html": "$lit-html",
     "@polymer/paper-icon-button": "$@polymer/paper-icon-button",
     "lit-element": "$lit-element",
     "@polymer/paper-button": "$@polymer/paper-button",
-    "echarts": "$echarts"
+    "echarts": "$echarts",
+    "line-awesome": "$line-awesome",
+    "@flowingcode/google-map": "$@flowingcode/google-map",
+    "@googlemaps/markerclusterer": "$@googlemaps/markerclusterer"
   },
   "vaadin": {
     "dependencies": {
+      "@flowingcode/google-map": "3.2.4",
+      "@googlemaps/markerclusterer": "2.0.8",
       "@polymer/iron-icon": "3.0.1",
       "@polymer/iron-iconset-svg": "^3.0.1",
       "@polymer/iron-list": "3.1.0",
@@ -415,6 +421,6 @@
       "workbox-core": "6.5.0",
       "workbox-precaching": "6.5.0"
     },
-    "hash": "610c54e010018ec6ce26e980abe34435ee39b22f868832c2d64ecda2c8398a6e"
+    "hash": "9761cf1bd983bcf7f2bb4f2d2235fa2aa4f0a5110c5c34736ec50df062b6f5cb"
   }
 }

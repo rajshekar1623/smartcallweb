@@ -17,6 +17,7 @@ import com.aakhya.smartcall.application.admin.entity.Branch;
 import com.aakhya.smartcall.application.dashboard.entity.ActivitySummary;
 import com.aakhya.smartcall.application.dashboard.entity.ActivitySummaryUser;
 import com.aakhya.smartcall.application.dashboard.entity.CashCollection;
+import com.aakhya.smartcall.application.dashboard.entity.FieldVisitByUser;
 
 @Repository
 public class DashboardJdbcRepocitory {
@@ -302,5 +303,44 @@ public class DashboardJdbcRepocitory {
 			}
 		});
 		return cashCollections;
+	}
+	
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	public List<FieldVisitByUser> findFieldVisitsByUser(){
+		List<FieldVisitByUser> visitisByUser = new ArrayList<FieldVisitByUser>();
+		StringBuffer query = new StringBuffer();
+		query.append(" select act.userId,dbo.fn_getUserName(userId,trn.companyId) userName, ");
+		query.append(" trn.genericNumber2 accountNumber,trn.firstName customerName, "); 
+		query.append(" brn.genericDecimal1 brnLat,brn.genericDecimal2 brnLon, "); 
+		query.append(" convert(varchar,actDet.scheduleDateTime,106) meetingDate, ");
+		query.append(" act.genericDecimal1 meetLat,act.genericDecimal2 meetLon, "); 
+		query.append(" trn.genericDecimal10 custLat,trn.genericDecimal11 custLon, ");
+		query.append(" trn.genericDecimal12 distFromBrn,null varianceKm ");
+		query.append(" from sc_transactionDataSet trn join sc_activity act ");
+		query.append(" on(trn.dataSetId = act.dataSetId and act.activityType = 1004 ");
+		query.append(" and act.activityStatus = 'COMPLETE') join sc_activityDetail actDet ");
+		query.append(" on(act.activityId = actDet.activityId and actDet.scheduleType = 'VISIT') ");
+		query.append(" join sc_branch brn on(trn.branchCode = brn.branchCode) order by act.userId");
+		visitisByUser = namedParameterJdbcTemplate.query(query.toString(), new RowMapper() {
+
+			@Override
+			public FieldVisitByUser mapRow(ResultSet rs, int rowNum) throws SQLException {
+				FieldVisitByUser fieldVisitByUser = new FieldVisitByUser();
+				fieldVisitByUser.setUserName(rs.getString("userName"));
+				fieldVisitByUser.setAccountNumber(rs.getString("accountNumber"));
+				fieldVisitByUser.setCustomerName(rs.getString("customerName"));
+				fieldVisitByUser.setBranchLat(rs.getDouble("brnLat"));
+				fieldVisitByUser.setBranchLon(rs.getDouble("brnLon"));
+				fieldVisitByUser.setMeetingDate(rs.getString("meetingDate"));
+				fieldVisitByUser.setMeetingLat(rs.getDouble("meetLat"));
+				fieldVisitByUser.setMeetingLon(rs.getDouble("meetLon"));
+				fieldVisitByUser.setCustLat(rs.getDouble("custLat"));
+				fieldVisitByUser.setCustLon(rs.getDouble("custLon"));
+				fieldVisitByUser.setDistanceFromBranch(rs.getDouble("distFromBrn"));
+				fieldVisitByUser.setVariance(rs.getDouble("varianceKm"));
+				return fieldVisitByUser;
+			}
+		});
+		return visitisByUser;
 	}
 }

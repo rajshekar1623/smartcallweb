@@ -10,7 +10,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.router.Route;
 
-@Route(value = "report", layout = TransactionMainLayout.class)
+@Route(value = "reports", layout = ReportsMainLayout.class)
 @PermitAll
 public class TransactionReport extends VerticalLayout {
 
@@ -33,6 +33,7 @@ public class TransactionReport extends VerticalLayout {
 //		tabSheet.add("Activity Summary", new ActivitySummaryReport(dashBoardService,branchService));
 		tabSheet.add("Activity Summary By User", new ActivitySummaryByUserReport(dashBoardService,branchService));
 		tabSheet.add("Cash Collection Report", new CashCollectionReport(dashBoardService, branchService));
+		tabSheet.add("Field Visit Report", new FieldVisitReport(dashBoardService, branchService));
 		add(tabSheet);
 	}
 }

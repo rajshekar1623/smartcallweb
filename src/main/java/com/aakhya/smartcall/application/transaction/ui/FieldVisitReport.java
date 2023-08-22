@@ -1,14 +1,10 @@
 package com.aakhya.smartcall.application.transaction.ui;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.util.Date;
-
 import org.vaadin.klaudeta.PaginatedGrid;
 
 import com.aakhya.smartcall.application.admin.entity.Branch;
 import com.aakhya.smartcall.application.admin.service.BranchService;
-import com.aakhya.smartcall.application.dashboard.entity.ActivitySummary;
+import com.aakhya.smartcall.application.dashboard.entity.FieldVisitByUser;
 import com.aakhya.smartcall.application.dashboard.service.DashBoardService;
 import com.vaadin.flow.component.Unit;
 import com.vaadin.flow.component.button.Button;
@@ -23,7 +19,7 @@ import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 
 import software.xdev.vaadin.grid_exporter.GridExporter;
 
-public class ActivitySummaryReport extends VerticalLayout {
+public class FieldVisitReport extends VerticalLayout {
 
 	/**
 	 * 
@@ -31,13 +27,13 @@ public class ActivitySummaryReport extends VerticalLayout {
 	private static final long serialVersionUID = -3072773594503216043L;
 	DashBoardService dashBoardService;
 	BranchService branchService;
-	PaginatedGrid<ActivitySummary, ?> activitySummaryGrid = new PaginatedGrid<>(ActivitySummary.class);
+	PaginatedGrid<FieldVisitByUser, ?> vistisByUserGrid = new PaginatedGrid<>(FieldVisitByUser.class);
 	DatePicker fromDate = new DatePicker("From Date");
 	DatePicker toDate = new DatePicker("To Date");
 	ComboBox<Branch> cluster = new ComboBox<Branch>("Cluster");
 	ComboBox<Branch> branch = new ComboBox<Branch>("Branch");
 	
-	public ActivitySummaryReport(DashBoardService dashBoardService,BranchService branchService) {
+	public FieldVisitReport(DashBoardService dashBoardService,BranchService branchService) {
 		this.dashBoardService = dashBoardService;
 		this.branchService = branchService;
 		buildLayout();
@@ -59,24 +55,27 @@ public class ActivitySummaryReport extends VerticalLayout {
 		toolBar.add(fromDate,toDate,cluster,branch,search,reset);
 		toolBar.setVerticalComponentAlignment(Alignment.END, search,reset);
 		
-		activitySummaryGrid.getStyle().set("border", "2px solid Grey");
-		activitySummaryGrid.getStyle().set("border-radius", "10px");
-		activitySummaryGrid.setSizeFull();
-		activitySummaryGrid.setColumns("branchName", "noOfAccountsAssigned", "noOfAcsCalledOnes", "noOfAcsCalledTwice",
-				"noOfAcsCalledThrice", "noOfAcsCalledMoreThanThrice");
-		activitySummaryGrid.getColumnByKey("noOfAccountsAssigned").setHeader("Assigned");
-		activitySummaryGrid.getColumnByKey("noOfAcsCalledOnes").setHeader("Called Once");
-		activitySummaryGrid.getColumnByKey("noOfAcsCalledTwice").setHeader("Called Twice");
-		activitySummaryGrid.getColumnByKey("noOfAcsCalledThrice").setHeader("Called Thrice");
-		activitySummaryGrid.getColumnByKey("noOfAcsCalledMoreThanThrice").setHeader("Called More than 3 times");
-		activitySummaryGrid.setPageSize(8);
-		activitySummaryGrid.setPaginatorSize(5);
-		Grid.Column<?> c1 = activitySummaryGrid.getColumnByKey("noOfAccountsAssigned");
-		Grid.Column<?> c2 = activitySummaryGrid.getColumnByKey("noOfAcsCalledOnes");
-		Grid.Column<?> c3 = activitySummaryGrid.getColumnByKey("noOfAcsCalledTwice");
-		Grid.Column<?> c4 = activitySummaryGrid.getColumnByKey("noOfAcsCalledThrice");
-		Grid.Column<?> c5 = activitySummaryGrid.getColumnByKey("noOfAcsCalledMoreThanThrice");
-		activitySummaryGrid.addThemeVariants(GridVariant.MATERIAL_COLUMN_DIVIDERS);
+		vistisByUserGrid.getStyle().set("border", "2px solid Grey");
+		vistisByUserGrid.getStyle().set("border-radius", "10px");
+		vistisByUserGrid.setSizeFull();
+		vistisByUserGrid.setColumns("userName", "accountNumber", "customerName", "branchLat",
+				"branchLon", "meetingDate","meetingLat","meetingLon","distanceFromBranch","custLat",
+				"custLon","variance");
+		vistisByUserGrid.getColumnByKey("branchLat").setHeader("Latitude");
+		vistisByUserGrid.getColumnByKey("branchLon").setHeader("Longitude");
+		vistisByUserGrid.getColumnByKey("meetingLat").setHeader("Latitude");
+		vistisByUserGrid.getColumnByKey("meetingLon").setHeader("meetingLon");
+		vistisByUserGrid.getColumnByKey("custLat").setHeader("Latitude");
+		vistisByUserGrid.getColumnByKey("custLon").setHeader("meetingLon");
+		vistisByUserGrid.setPageSize(8);
+		vistisByUserGrid.setPaginatorSize(5);
+		Grid.Column<?> a1 = vistisByUserGrid.getColumnByKey("branchLat");
+		Grid.Column<?> a2 = vistisByUserGrid.getColumnByKey("branchLon");
+		Grid.Column<?> b1 = vistisByUserGrid.getColumnByKey("meetingLat");
+		Grid.Column<?> b2 = vistisByUserGrid.getColumnByKey("meetingLon");
+		Grid.Column<?> c1 = vistisByUserGrid.getColumnByKey("custLat");
+		Grid.Column<?> c2 = vistisByUserGrid.getColumnByKey("custLon");
+		vistisByUserGrid.addThemeVariants(GridVariant.MATERIAL_COLUMN_DIVIDERS);
 		
 		HorizontalLayout headerText = new HorizontalLayout();
 		headerText.setWidth(100, Unit.PERCENTAGE);
@@ -90,12 +89,14 @@ public class ActivitySummaryReport extends VerticalLayout {
 				new Label("No. Of Accounts"));
 		
 		headerText.setAlignItems(Alignment.CENTER);
-		HeaderRow headerRow = activitySummaryGrid.prependHeaderRow();
-		headerRow.join(c1, c2, c3, c4, c5).setComponent(headerText);
+		HeaderRow headerRow = vistisByUserGrid.prependHeaderRow();
+		headerRow.join(a1, a2).setComponent(new Label("Branch Location"));
+		headerRow.join(b1, b2).setComponent(new Label("Customer Location"));
+		headerRow.join(c1, c2).setComponent(new Label("Meeting Location"));
 		Button exportData = new Button("Export Data");
-		exportData.addClickListener(click -> exportData(activitySummaryGrid));
-		activitySummaryGrid.appendFooterRow().getCell(c1).setComponent(exportData);
-		add(toolBar,activitySummaryGrid);
+		exportData.addClickListener(click -> exportData(vistisByUserGrid));
+		vistisByUserGrid.appendFooterRow().getCell(c1).setComponent(exportData);
+		add(toolBar,vistisByUserGrid);
 	}
 
 	private void clusterSelected() {
@@ -110,18 +111,18 @@ public class ActivitySummaryReport extends VerticalLayout {
 	}
 
 	private void searchByFilters() {
-		Date fDate = null;
-		Date tDate = null;
-		LocalDate selectedFromDate = fromDate.getValue();
-		if(null != selectedFromDate)
-			fDate = Date.from(selectedFromDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-		
-		LocalDate selectedToDate = toDate.getValue();
-		Branch selectedCluster = cluster.getValue();
-		Branch selectedBranch = branch.getValue();
-		if(null != selectedToDate)
-			tDate = Date.from(selectedToDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
-		activitySummaryGrid.setItems(dashBoardService.getActivitySummaryBranchWise(fDate,tDate,selectedCluster,selectedBranch));
+//		Date fDate = null;
+//		Date tDate = null;
+//		LocalDate selectedFromDate = fromDate.getValue();
+//		if(null != selectedFromDate)
+//			fDate = Date.from(selectedFromDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+//		
+//		LocalDate selectedToDate = toDate.getValue();
+//		Branch selectedCluster = cluster.getValue();
+//		Branch selectedBranch = branch.getValue();
+//		if(null != selectedToDate)
+//			tDate = Date.from(selectedToDate.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant());
+		vistisByUserGrid.setItems(dashBoardService.findFieldVisitsByUser());
 	}
 	
 	private void exportData(Grid<?> grid) {

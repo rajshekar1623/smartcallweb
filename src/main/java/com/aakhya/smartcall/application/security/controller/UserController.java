@@ -21,7 +21,7 @@ public class UserController {
 	@RequestMapping(path = "/generateUser", method = RequestMethod.GET, produces = MediaType.APPLICATION_JSON_VALUE)
 	public User getUser(@RequestParam("userId") String userId) {
 		try {
-			return userService.findUserById(userId);
+			return userService.findOnlyUserById(userId);
 		} catch (Exception e) {
 			return null;
 		}

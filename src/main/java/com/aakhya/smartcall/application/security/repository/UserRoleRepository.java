@@ -15,4 +15,5 @@ public interface UserRoleRepository extends JpaRepository<UserRole, UserRolePk> 
 
 	@Query("select c from UserRole c where c.userId = :userId")
 	List<UserRole> findExistingRolesForUser(@Param("userId") String userId);
+	
 }

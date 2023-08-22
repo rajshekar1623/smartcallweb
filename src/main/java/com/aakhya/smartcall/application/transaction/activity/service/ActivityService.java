@@ -210,18 +210,22 @@ public class ActivityService {
 				}
 				activityRepository.saveAll(activities);
 			} else if("STTC-OTH".equals(flow) || "VTC-NRTP-OTH".equals(flow) 
-					|| "VTC-NRTP-NTL".equals(flow) || "STTC-NRTP-NTL".equals(flow)) {
+					|| "VTC-NRTP-NTL".equals(flow) || "STTC-NRTP-NTL".equals(flow)
+					|| "STTC-NRTP-OTH".equals(flow)) {
 				parentActivity.setActivityStatus(ActivityStatus.COMPLETE.getValue());
 				List<Activity> activities = new ArrayList<Activity>();
 				activities.add(parentActivity);
-				if(inProcessCall)
-				activities.add(prepareChildActivity(flow, dataSetId, callDetails, parentActivity, callingAgent,
-						dateOfVisitPromisedStr, foName, relativeName, relativeContactNumber));
-				else if(null != pendingScheduled) {
+				if(null != pendingScheduled) {
 					pendingScheduled.setActivityStatus(ActivityStatus.COMPLETE.getValue());
 					pendingScheduled.setActivityDateTime(new Date());
 					pendingScheduled.setGenericString5(reason);
 					activities.add(pendingScheduled);
+				}else {
+					Activity callActivity = prepareChildActivity(flow, dataSetId, callDetails, parentActivity, callingAgent,
+							dateOfVisitPromisedStr, foName, relativeName, relativeContactNumber);
+					callActivity.setActivityDateTime(new Date());
+					callActivity.setActivityStatus(ActivityStatus.COMPLETE.getValue());
+					activities.add(callActivity);
 				}
 				activityRepository.saveAll(activities);
 			} else if (null != flow && flow.startsWith("VTC-RTP-")) {
@@ -425,7 +429,7 @@ public class ActivityService {
 				}
 				activities.add(parentActivity);
 				activityRepository.saveAll(activities);
-			} else  if (null != flow && flow.startsWith("NRTP-")) {
+			} else  if (null != flow && flow.startsWith("VTC-NRTP-")) {
 				List<Activity> activities = new ArrayList<Activity>();
 				Activity pendingActivity = activityRepository.findPendingActivity(ActivityStatus.PENDING.getValue(), dataSetId);
 				parentActivity.setActivityStatus(ActivityStatus.COMPLETE.getValue());

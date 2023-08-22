@@ -546,6 +546,7 @@ public class AssignmentView extends VerticalLayout {
 				memberName);
 		String label = "No of Records fetched : " + allDataSets.size();
 		noOfRecordsFetched.setText(label);
+		grid.setItems(new ArrayList<TransactionDataSet>());
 		grid.setItems(allDataSets);
 	}
 

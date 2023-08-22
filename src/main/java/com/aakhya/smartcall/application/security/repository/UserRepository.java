@@ -12,7 +12,13 @@ public interface UserRepository extends JpaRepository<User, String> {
 
 	@Query("select c from User c where c.status <> 'X' ")
 	List<User> findAllUsers();
+	
+	@Query("select c from User c join c.userRoles d where c.userId = :userId and c.status <> 'X' ")
+	User findUserByUserId(@Param("userId") String userId);
 
+	@Query("select c from User c where c.userId = :userId and c.status <> 'X' ")
+	User findUserOnlyByUserId(@Param("userId") String userId);
+	
 	@Query("select c from User c "
 			+ " where lower(c.userName) like lower(concat('%', :searchTerm, '%')) and c.status <> 'X' ")
 	List<User> search(@Param("searchTerm") String searchTerm);

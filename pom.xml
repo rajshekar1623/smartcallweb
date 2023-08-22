@@ -3,12 +3,13 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<!-- Project from https://start.vaadin.com/ -->
-	<groupId>com.example.application</groupId>
-	<artifactId>flowcrmtutorial</artifactId>
-	<name>flowcrmtutorial</name>
+	<groupId>com.aakhya.smartcall.application</groupId>
+	<artifactId>smartcall</artifactId>
+	<name>smartcall</name>
 	<version>1.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<properties>
+		<tomcat.version>9.0.45</tomcat.version>
 		<java.version>11</java.version>
 		<vaadin.version>23.3.1</vaadin.version>
 		<!-- this parameter is needed as spring-boot bom overwrites it -->
@@ -199,6 +200,11 @@
 		   <groupId>org.vaadin.olli</groupId>
 		   <artifactId>browser-opener</artifactId>
 		   <version>2.0.0</version>
+		</dependency>
+		<dependency>
+		   <groupId>com.flowingcode.vaadin.addons</groupId>
+		   <artifactId>google-maps</artifactId>
+		   <version>1.8.3</version>
 		</dependency>
 		<dependency>
 		    <groupId>com.innoventsolutions.birt.runtime</groupId>

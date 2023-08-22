@@ -20,11 +20,11 @@ public class DataSetExceptionDetailsView extends VerticalLayout {
 	private static final long serialVersionUID = -2467785206636056564L;
 	private Grid<DataSetException> exceptionsGrid;
 	private String columnName;
-	private Map<Long,String> dataSetExceptions;
+	private Map<String,String> dataSetExceptions;
 	private List<DataSetException> exceptions;
 	private Button export;
 
-	public DataSetExceptionDetailsView(String columnName,Map<Long, String> firstNameErrorRecords) {
+	public DataSetExceptionDetailsView(String columnName,Map<String, String> firstNameErrorRecords) {
 		this.dataSetExceptions = firstNameErrorRecords;
 		this.columnName = columnName;
 		buildLayout();
@@ -33,7 +33,7 @@ public class DataSetExceptionDetailsView extends VerticalLayout {
 	private void buildLayout() {
 		exceptions = new ArrayList<DataSetException>();
 		if(null != dataSetExceptions && !dataSetExceptions.isEmpty()) {
-			for(Long accountNumber:dataSetExceptions.keySet()) {
+			for(String accountNumber:dataSetExceptions.keySet()) {
 				DataSetException exception = new DataSetException(accountNumber, dataSetExceptions.get(accountNumber));
 				exceptions.add(exception);
 			}

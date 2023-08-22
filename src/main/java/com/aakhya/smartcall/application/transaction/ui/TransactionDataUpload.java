@@ -17,10 +17,7 @@ import java.util.logging.Logger;
 
 import javax.annotation.security.PermitAll;
 
-//import org.apache.commons.csv.CSVFormat;
-//import org.apache.commons.csv.CSVPrinter;
-
-import com.aakhya.smartcall.application.transaction.data.entity.TransactionDataSet;
+import com.aakhya.smartcall.application.transaction.data.entity.TemporaryTransaction;
 import com.aakhya.smartcall.application.transaction.data.service.TransactionDataSetService;
 import com.aakhyatech.smartcall.application.utils.MessageUtils;
 import com.vaadin.flow.component.Text;
@@ -50,21 +47,21 @@ public class TransactionDataUpload extends VerticalLayout {
 	 */
 	private static final long serialVersionUID = 5150502074584480853L;
 	TransactionDataSetService transactionDataSetService;
-	public static String BASE_PATH = "D:\\Tools\\smartcall\\";
+	public static String BASE_PATH = "E:\\Tools\\smartcall\\";
 	private File file;
 	@SuppressWarnings("unused")
 	private String originalFileName,mimeType;
 //	TransactionDataUploadEntity uploadEntity;
-	List<TransactionDataSet> transactionDataSets;
-	private Map<Long, String> firstNameErrorRecords;
-	private Map<Long, String> mobileNoErrorRecords;
-	private Map<Long, String> loanAcNoErrorRecords;
-	private Map<Long, String> branchCodeErrorRecords;
-	private Map<Long, String> principleDueErrorRecords;
-	private Map<Long, String> interestDueErrorRecords;
-	private Map<Long, String> interestRateErrorRecords;
-	private Map<Long, String> lastInterestPaidDateErrorRecords;
-	private Map<Long, String> npaDateErrorRecords;
+	List<TemporaryTransaction> transactionDataSets;
+	private Map<String, String> firstNameErrorRecords;
+	private Map<String, String> mobileNoErrorRecords;
+	private Map<String, String> loanAcNoErrorRecords;
+	private Map<String, String> branchCodeErrorRecords;
+	private Map<String, String> principleDueErrorRecords;
+	private Map<String, String> interestDueErrorRecords;
+	private Map<String, String> interestRateErrorRecords;
+	private Map<String, String> lastInterestPaidDateErrorRecords;
+	private Map<String, String> npaDateErrorRecords;
 	private boolean invalidRecordsExisit;
 	ProgressBar progressBar;
 	
@@ -104,14 +101,17 @@ public class TransactionDataUpload extends VerticalLayout {
 		
 //		firstComponent.add(upperComponent,progressBar);
 
-		Grid<TransactionDataSet> grid = new Grid<>(TransactionDataSet.class);
+		Grid<TemporaryTransaction> grid = new Grid<>(TemporaryTransaction.class);
 		grid.setSizeFull();
 		grid.getStyle().set("border", "2px solid Grey");
 		grid.getStyle().set("border-radius", "10px");
-		grid.setColumns("firstName", "dateOfBirth", "genericNumber1","branchCode", "genericString4", "genericNumber2");
-		grid.getColumnByKey("genericNumber1").setHeader("Mobile Number");
-		grid.getColumnByKey("genericString4").setHeader("Branch Name");
-		grid.getColumnByKey("genericNumber2").setHeader("Loan A/c #");
+		grid.setColumns("firstname", "dob", "mobilenumber","branchcode", "branchname", "loanaccountnumber");
+		grid.getColumnByKey("firstname").setHeader("First Name");
+		grid.getColumnByKey("dob").setHeader("Date of Birth");
+		grid.getColumnByKey("mobilenumber").setHeader("Mobile Number");
+		grid.getColumnByKey("branchcode").setHeader("Branch Code");
+		grid.getColumnByKey("branchname").setHeader("Branch Name");
+		grid.getColumnByKey("loanaccountnumber").setHeader("Loan A/c #");
 		SplitLayout content = new SplitLayout(upperComponent, grid);
 		content.setSizeFull();
 		content.setOrientation(Orientation.VERTICAL);
@@ -124,7 +124,7 @@ public class TransactionDataUpload extends VerticalLayout {
 			File uploadedFile = new File(BASE_PATH + event.getFileName());
 			try {
 				FileInputStream fis = new FileInputStream(uploadedFile);
-				transactionDataSets = transactionDataSetService.uploadData(fis);
+				transactionDataSets = transactionDataSetService.uploadDataNew(fis);
 //				transactionDataSets = uploadEntity.getUploadedData();
 				recordsFromFile.setText(recordsFromFile.getText() + ":" + transactionDataSets.size());
 				grid.setItems(transactionDataSets);
@@ -178,16 +178,16 @@ public class TransactionDataUpload extends VerticalLayout {
 		return null;
 	}
 
-	private List<DataSetExceptions> checkDataException(List<TransactionDataSet> dataSets) {
-		firstNameErrorRecords = new HashMap<Long, String>();
-		mobileNoErrorRecords = new HashMap<Long, String>();
-		loanAcNoErrorRecords = new HashMap<Long, String>();
-		branchCodeErrorRecords = new HashMap<Long, String>();
-		principleDueErrorRecords = new HashMap<Long, String>();
-		interestDueErrorRecords = new HashMap<Long, String>();
-		interestRateErrorRecords = new HashMap<Long, String>();
-		lastInterestPaidDateErrorRecords = new HashMap<Long, String>();
-		npaDateErrorRecords = new HashMap<Long, String>();
+	private List<DataSetExceptions> checkDataException(List<TemporaryTransaction> dataSets) {
+		firstNameErrorRecords = new HashMap<String, String>();
+		mobileNoErrorRecords = new HashMap<String, String>();
+		loanAcNoErrorRecords = new HashMap<String, String>();
+		branchCodeErrorRecords = new HashMap<String, String>();
+		principleDueErrorRecords = new HashMap<String, String>();
+		interestDueErrorRecords = new HashMap<String, String>();
+		interestRateErrorRecords = new HashMap<String, String>();
+		lastInterestPaidDateErrorRecords = new HashMap<String, String>();
+		npaDateErrorRecords = new HashMap<String, String>();
 		invalidRecordsExisit = false;
 		List<DataSetExceptions> dataSetExceptions = new ArrayList<DataSetExceptions>();
 		Integer firstNameInvalidCount = 0;
@@ -208,91 +208,91 @@ public class TransactionDataUpload extends VerticalLayout {
 		Integer lastInterestPaidDateValidCount = 0;
 		Integer npaDateInvalidCount = 0;
 		Integer npaDateValidCount = 0;
-		for (TransactionDataSet dataSet : dataSets) {
-			if (null != dataSet.getFirstName() && dataSet.getFirstName().replaceAll(" ", "").length() > 0)
+		for (TemporaryTransaction dataSet : dataSets) {
+			if (null != dataSet.getFirstname() && dataSet.getFirstname().replaceAll(" ", "").length() > 0)
 				firstNameValidCount++;
 			else {
-				firstNameErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getFirstName());
+				firstNameErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getFirstname());
 				firstNameInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericNumber1() && dataSet.getGenericNumber1() > 0
-					&& dataSet.getGenericNumber1().toString().length() == 10)
+			if (null != dataSet.getMobilenumber() && !dataSet.getMobilenumber().isEmpty()
+					&& dataSet.getMobilenumber().length() == 10)
 				mobileNumberValidCount++;
 			else {
-				if (null != dataSet.getGenericNumber1())
-					mobileNoErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getGenericNumber1().toString());
+				if (null != dataSet.getMobilenumber())
+					mobileNoErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getMobilenumber());
 				else
-					mobileNoErrorRecords.put(dataSet.getGenericNumber2(), null);
+					mobileNoErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				mobileNumberInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericNumber2() && dataSet.getGenericNumber2() > 0)
+			if (null != dataSet.getLoanaccountnumber() && !dataSet.getLoanaccountnumber().isEmpty())
 				loanAccountNumberValidCount++;
 			else {
-				if (null != dataSet.getGenericNumber2())
-					loanAcNoErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getGenericNumber2().toString());
+				if (null != dataSet.getLoanaccountnumber())
+					loanAcNoErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getLoanaccountnumber().toString());
 				else
-					loanAcNoErrorRecords.put(dataSet.getGenericNumber2(), null);
+					loanAcNoErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				loanAccountNumberInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getBranchCode() && dataSet.getBranchCode().replaceAll(" ", "").length() > 0)
+			if (null != dataSet.getBranchcode() && dataSet.getBranchcode().replaceAll(" ", "").length() > 0)
 				branchCodeValidCount++;
 			else {
-				branchCodeErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getBranchCode());
+				branchCodeErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getLoanaccountnumber());
 				branchCodeInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericDecimal4() && dataSet.getGenericDecimal4().compareTo(BigDecimal.ZERO) == 1)
+			if (null != dataSet.getPrincipledue() && dataSet.getPrincipledue().compareTo(BigDecimal.ZERO) == 1)
 				principleDueValidCount++;
 			else {
-				if (null != dataSet.getGenericDecimal4())
-					principleDueErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getGenericDecimal4().toString());
+				if (null != dataSet.getPrincipledue())
+					principleDueErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getPrincipledue().toString());
 				else
-					principleDueErrorRecords.put(dataSet.getGenericNumber2(), null);
+					principleDueErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				principleDueInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericDecimal5() && dataSet.getGenericDecimal5().compareTo(BigDecimal.ZERO) == 1)
+			if (null != dataSet.getInterestdue() && dataSet.getInterestdue().compareTo(BigDecimal.ZERO) == 1)
 				interestDueValidCount++;
 			else {
-				if (null != dataSet.getGenericDecimal5())
-					interestDueErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getGenericDecimal5().toString());
+				if (null != dataSet.getInterestdue())
+					interestDueErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getInterestdue().toString());
 				else
-					interestDueErrorRecords.put(dataSet.getGenericNumber2(), null);
+					interestDueErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				interestDueInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericDecimal7() && dataSet.getGenericDecimal7().compareTo(BigDecimal.ZERO) == 1)
+			if (null != dataSet.getInterestrate() && dataSet.getInterestrate().compareTo(BigDecimal.ZERO) == 1)
 				interestRateValidCount++;
 			else {
-				if (null != dataSet.getGenericDecimal7())
-					interestRateErrorRecords.put(dataSet.getGenericNumber2(), dataSet.getGenericDecimal7().toString());
+				if (null != dataSet.getInterestrate())
+					interestRateErrorRecords.put(dataSet.getLoanaccountnumber(), dataSet.getInterestrate().toString());
 				else
-					interestRateErrorRecords.put(dataSet.getGenericNumber2(), null);
+					interestRateErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				interestRateInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericDate1())
+			if (null != dataSet.getLastinterestapplieddate())
 				lastInterestPaidDateValidCount++;
 			else {
-				if (null != dataSet.getGenericDate1()) {
-					String lipd = new SimpleDateFormat("dd-MM=yyyy").format(dataSet.getGenericDate1());
-					lastInterestPaidDateErrorRecords.put(dataSet.getGenericNumber2(), lipd);
+				if (null != dataSet.getLastinterestapplieddate()) {
+					String lipd = new SimpleDateFormat("dd-MM=yyyy").format(dataSet.getLastinterestapplieddate());
+					lastInterestPaidDateErrorRecords.put(dataSet.getLoanaccountnumber(), lipd);
 				} else
-					lastInterestPaidDateErrorRecords.put(dataSet.getGenericNumber2(), null);
+					lastInterestPaidDateErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				lastInterestPaidDateInvalidCount++;
 				invalidRecordsExisit = true;
 			}
-			if (null != dataSet.getGenericDate2())
+			if (null != dataSet.getNpadate())
 				npaDateValidCount++;
 			else {
-				if (null != dataSet.getGenericDate2()) {
-					String npaDate = new SimpleDateFormat("dd-MM=yyyy").format(dataSet.getGenericDate2());
-					npaDateErrorRecords.put(dataSet.getGenericNumber2(), npaDate);
+				if (null != dataSet.getNpadate()) {
+					String npaDate = new SimpleDateFormat("dd-MM=yyyy").format(dataSet.getNpadate());
+					npaDateErrorRecords.put(dataSet.getLoanaccountnumber(), npaDate);
 				} else
-					npaDateErrorRecords.put(dataSet.getGenericNumber2(), null);
+					npaDateErrorRecords.put(dataSet.getLoanaccountnumber(), null);
 				npaDateInvalidCount++;
 				invalidRecordsExisit = true;
 			}
@@ -410,7 +410,7 @@ public class TransactionDataUpload extends VerticalLayout {
 //			dialog.getFooter().add(cancelButton);
 //			dialog.setModal(true);
 //			dialog.open();
-			transactionDataSetService.createTransactionDataSet(transactionDataSets);
+			transactionDataSetService.uploadDataFromFile(transactionDataSets);
 			MessageUtils.successMessage("File was uploaded successfully!!!");
 		} catch (Exception e) {
 			e.printStackTrace();

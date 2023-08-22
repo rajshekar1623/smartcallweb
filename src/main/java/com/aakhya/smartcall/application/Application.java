@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.vaadin.flow.component.dependency.NpmPackage;
 import com.vaadin.flow.component.page.AppShellConfigurator;
-import com.vaadin.flow.component.page.Push;
+import com.vaadin.flow.server.VaadinSession;
 import com.vaadin.flow.theme.Theme;
 
 /**
@@ -16,7 +16,6 @@ import com.vaadin.flow.theme.Theme;
  *
  */
 @SpringBootApplication
-@Push
 @Theme(value = "flowcrmtutorial")
 @NpmPackage(value = "line-awesome", version = "1.3.0")
 public class Application implements AppShellConfigurator {
@@ -27,7 +26,7 @@ public class Application implements AppShellConfigurator {
 	private static final long serialVersionUID = -7031455967153188961L;
 
 	public static void main(String[] args) {
-        SpringApplication.run(Application.class, args);
+		SpringApplication.run(Application.class, args);
     }
 
 }

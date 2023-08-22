@@ -26,11 +26,7 @@ public class SecurityMainLayout extends AppLayout {
 	 */
 	private static final long serialVersionUID = 7804257260842514862L;
 	private final SecurityService securityService;
-	private Button home;
-	private Button admin;
-	private Button security;
-	private Button transaction;
-	private Button product;
+	private Button home,admin,security,transaction,product,reports;
 	private UserService userService;
 	
 	public SecurityMainLayout(SecurityService securityService,UserService userService) {
@@ -62,9 +58,11 @@ public class SecurityMainLayout extends AppLayout {
         product = new Button("Product", e -> createProduct());
         product.setIcon(new Icon(VaadinIcon.PACKAGE));
         
+        reports = new Button("Reports", e -> createReports());
+        reports.setIcon(new Icon(VaadinIcon.RECORDS));
         
         HorizontalLayout header = new HorizontalLayout(new DrawerToggle(),logo,home,
-        		transaction,admin,security, logout);
+        		transaction,reports,admin,security, logout);
 
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.expand(logo);
@@ -112,6 +110,10 @@ public class SecurityMainLayout extends AppLayout {
     
     private void createProduct() {
 		product.getUI().ifPresent(ui -> ui.navigate("product"));
+	}
+    
+    private void createReports() {
+		reports.getUI().ifPresent(ui -> ui.navigate("reports"));
 	}
     
     private String getUserName() {

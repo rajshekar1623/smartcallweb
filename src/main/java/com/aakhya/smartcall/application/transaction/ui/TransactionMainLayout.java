@@ -26,11 +26,7 @@ public class TransactionMainLayout extends AppLayout {
 	 */
 	private static final long serialVersionUID = 7804257260842514862L;
 	private final SecurityService securityService;
-	private Button home;
-	private Button admin;
-	private Button security;
-	private Button transaction;
-	private Button product;
+	private Button home,admin,security,transaction,product,reports;
 	private UserService userService;
 	
 	public TransactionMainLayout(SecurityService securityService,UserService userService) {
@@ -62,8 +58,11 @@ public class TransactionMainLayout extends AppLayout {
         product = new Button("Product", e -> createProduct());
         transaction.setIcon(new Icon(VaadinIcon.PACKAGE));
         
+        reports = new Button("Reports", e -> createReports());
+        reports.setIcon(new Icon(VaadinIcon.RECORDS));
+        
         HorizontalLayout header = new HorizontalLayout(new DrawerToggle(),logo,home,transaction,
-        		admin,security, logout);
+        		reports,admin,security, logout);
 
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         header.expand(logo);
@@ -87,8 +86,8 @@ public class TransactionMainLayout extends AppLayout {
         RouterLink sendSms = new RouterLink("Send SMS",SendSmsView.class);
         
         RouterLink sendWhatsapp = new RouterLink("Send Whatsapp",SendWhatsappView.class);
-        RouterLink report = new RouterLink("Report",TransactionReport.class);
-        VerticalLayout drawer = new VerticalLayout(listLink,transactionDataUpload,activityStatus,sendSms,sendWhatsapp,report);
+        
+        VerticalLayout drawer = new VerticalLayout(listLink,transactionDataUpload,activityStatus,sendSms,sendWhatsapp);
         drawer.setSizeFull();
         drawer.getStyle().set( "border" , "2px solid Grey" ) ; 
         drawer.getStyle().set("border-radius", "10px");
@@ -117,6 +116,10 @@ public class TransactionMainLayout extends AppLayout {
     
     private void createProduct() {
 		product.getUI().ifPresent(ui -> ui.navigate("product"));
+	}
+    
+    private void createReports() {
+		reports.getUI().ifPresent(ui -> ui.navigate("reports"));
 	}
     
     private String getUserName() {

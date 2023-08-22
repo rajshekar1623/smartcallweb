@@ -54,7 +54,7 @@ public class DashboardView extends VerticalLayout {
 	}
 
 	private Component getBarchart2() {
-		BarChart2 chart1 = new BarChart2();
+		SunburstChartDemo chart1 = new SunburstChartDemo();
 		return chart1;
 	}
 }

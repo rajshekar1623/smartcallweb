@@ -352,8 +352,7 @@ public class ExcelFileReader implements FileReader {
 		return transactionDataSets;
 	}
 
-	public static List<TemporaryTransaction> processDilimitedFileNew(FileInputStream fis,
-			Long initialCount,TransactionDataSetService service) {
+	public static List<TemporaryTransaction> processDilimitedFileNew(FileInputStream fis) {
 //		TransactionDataUploadEntity transactionDataUpload = new TransactionDataUploadEntity();
 		List<TemporaryTransaction> temporaryTransactions = new ArrayList<TemporaryTransaction>();
 		InputStreamReader inputStreamReader = new InputStreamReader(fis);
@@ -448,11 +447,11 @@ public class ExcelFileReader implements FileReader {
 						if(null != dpdQueueStr)
 							System.out.println("dpdQueueStr::"+dpdQueueStr);
 						if (null != dpdQueueStr && dpdQueueStr.replaceAll(" ", "").length() > 0) {
-							if ("00".equals(dpdQueueStr) || "01".equals(dpdQueueStr))
+							if ("0".equals(dpdQueueStr) || "1".equals(dpdQueueStr))
 								temporaryTransaction.setDpdqueue(3738L);
-							else if ("02".equals(dpdQueueStr))
+							else if ("2".equals(dpdQueueStr))
 								temporaryTransaction.setDpdqueue(3739L);
-							else if ("03".equals(dpdQueueStr))
+							else if ("3".equals(dpdQueueStr))
 								temporaryTransaction.setDpdqueue(3740L);
 							else
 								temporaryTransaction.setDpdqueue(3750L);

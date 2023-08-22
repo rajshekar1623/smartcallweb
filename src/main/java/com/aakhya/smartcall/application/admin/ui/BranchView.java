@@ -17,12 +17,14 @@ import com.aakhyatech.smartcall.application.utils.MessageUtils;
 import com.vaadin.flow.component.Component;
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.confirmdialog.ConfirmDialog;
+import com.vaadin.flow.component.dialog.Dialog;
 import com.vaadin.flow.component.grid.Grid.SelectionMode;
 import com.vaadin.flow.component.html.Label;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.splitlayout.SplitLayout;
 import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.data.renderer.ComponentRenderer;
 import com.vaadin.flow.router.Route;
 
 @Route(value = "admin", layout = AdminMainLayout.class)
@@ -98,12 +100,37 @@ public class BranchView extends VerticalLayout {
 		grid.getStyle().set("border", "2px solid Grey");
 		grid.getStyle().set("border-radius", "10px");
 		grid.setColumns("branchCode", "branchName", "branchEmailId", "status");
+		grid.addColumn(new ComponentRenderer<>(branch -> {
+			Button viewDetails = new Button("Location");
+			viewDetails.addClickListener(e -> editBranchLocation(branch));
+			return viewDetails;
+		}));
 		grid.getColumns().forEach(col -> col.setAutoWidth(true));
 		grid.setSelectionMode(SelectionMode.MULTI);
 		grid.addItemClickListener(event -> editBranch(event.getItem()));
 		grid.setPageSize(10);
 		grid.setPaginatorSize(5);
 	}
+
+	private void editBranchLocation(Branch branch) {
+		Dialog dialog = new Dialog();
+		dialog.setHeaderTitle("Capture Location for Branch:: "+branch.getBranchName());
+		dialog.setHeight("600px");
+		dialog.setWidth("1000px");
+		BranchLocationView branchLocationView = new BranchLocationView(branch,service);
+		Button cancelButton = new Button("Close", e -> dialog.close());
+		Button saveButton = new Button("Save", e -> branchLocationView.saveBranch(dialog));
+		dialog.add(branchLocationView);
+		dialog.getFooter().add(saveButton,cancelButton);
+		dialog.open();
+	}
+
+//	private void saveBranchLocation(Branch branch,Dialog dialog) {
+////		service.saveBranch(branch);
+//		dialog.close();
+//		service.getDistance(null, null, null);
+//		MessageUtils.successMessage("Successfully location for Branch :: "+branch.getBranchName());
+//	}
 
 	private HorizontalLayout getToolbar() {
 		filterText.setPlaceholder("Filter by name...");

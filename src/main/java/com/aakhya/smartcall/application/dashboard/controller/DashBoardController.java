@@ -16,14 +16,16 @@ import com.aakhya.smartcall.application.security.entity.User;
 
 
 @RestController
-@RequestMapping("/dashboard")
+@RequestMapping("/dashboardapi")
 public class DashBoardController {
 
 	@Autowired
 	private DashBoardService dashBoardService;
 	
-	@RequestMapping(path="/getDashBoardForUser", method = RequestMethod.POST, produces =MediaType.APPLICATION_JSON_VALUE)
+	@RequestMapping(path="/postDashBoardForUser",method = RequestMethod.POST,
+			produces =MediaType.APPLICATION_JSON_VALUE)
 	public List<DashBoard> getDashBoardForUser(@RequestBody User user){
-		return dashBoardService.getDashBoardForUser(user);
+		System.out.println("Inside the post method on controller");
+		return dashBoardService.getDashBoardForUser(user.getUserId());
 	}
 }
