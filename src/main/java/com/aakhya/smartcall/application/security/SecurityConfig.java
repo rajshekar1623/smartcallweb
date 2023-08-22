@@ -30,8 +30,8 @@ public class SecurityConfig extends VaadinWebSecurity {
 		http.csrf().disable();
 		super.configure(http);
 		setLoginView(http, LoginView.class);
-		http.cors().and().csrf().ignoringAntMatchers("/dashboardapi/**")
-		.ignoringAntMatchers("/security/**");
+//		http.cors().and().csrf().ignoringAntMatchers("/dashboardapi/**")
+//		.ignoringAntMatchers("/security/**");
 	}
 
 	@Override
